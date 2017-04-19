@@ -1,0 +1,104 @@
+USE [NBADB]
+GO
+/****** Object:  StoredProcedure [dbo].[spEndOfSeason]    Script Date: 4/19/2017 12:44:25 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[spEndOfSeason]
+AS
+BEGIN
+
+		IF(SELECT MAX(psFinalsWins) FROM tblPlayoffSeeding) = 4
+			BEGIN
+
+				INSERT INTO [dbo].[tblNBAChampion](chID,ch_tmID,chYear)
+				VALUES((SELECT ISNULL(MAX(chID),0) FROM tblNBAChampion) + 1,(SELECT ps_tmID FROM tblPlayoffSeeding WHERE psFinalsWins = 4),(SELECT ISNULL(MAX(chYear),1999) + 1 FROM tblNBAChampion))
+
+				EXEC [dbo].[spAwardMVPs]
+
+				DECLARE @ChampName VARCHAR(50) = (SELECT tmLocation + ' ' + tmName 	FROM tblPlayoffSeeding ps JOIN tblTeam t ON t.tmID = ps.ps_tmID WHERE psFinalsWins = 4)
+				DECLARE @ChampYear VARCHAR(4) = CAST((SELECT MAX(chYear) FROM tblNBAChampion) AS VARCHAR(4))
+				DECLARE @RegMVP VARCHAR(30) = (SELECT plFirstName + ' ' + plLastName FROM tblPlayer p JOIN tblMVP m ON m.m_plID = p.plID WHERE mYear = (SELECT MAX(chYear) FROM tblNBAChampion) AND m.mRS_Finals = 0)
+				DECLARE @FinalsMVP VARCHAR(30) = (SELECT plFirstName + ' ' + plLastName FROM tblPlayer p JOIN tblMVP m ON m.m_plID = p.plID WHERE mYear = (SELECT MAX(chYear) FROM tblNBAChampion) AND m.mRS_Finals = 1)
+
+				UPDATE [NBADB].[dbo].[tblTeam]
+				SET tmDivLosses = 0, tmDivWins = 0, tmConfLosses = 0, tmConfWins = 0, tmTotalWins = 0, tmTotalLosses = 0, tmNonConfLosses = 0, tmNonConfWins = 0
+				DELETE FROM tblGameStats
+				DELETE FROM tblGames
+				DELETE FROM tblPlayoffSeeding
+
+				PRINT ''
+				PRINT 'THE ' + @ChampName + ' ARE YOUR ' + @ChampYear + ' NBA CHAMPIONS!!!
+				'
+
+				PRINT 'REGULAR SEASON MVP: ' + @RegMVP
+				PRINT ''
+				PRINT 'NBA FINALS MVP: ' + @FinalsMVP
+
+				UPDATE NBADB.dbo.tblPlayer
+				SET 
+				plIQ =			CASE WHEN (plDetermination = 99) AND (plIQ < 99) THEN plIQ + .25
+									 WHEN (plDetermination = 95) AND (plIQ < 99) THEN plIQ + .20
+									 WHEN (plDetermination = 90) AND (plIQ < 99) THEN plIQ + .15
+									 WHEN (plDetermination = 85) AND (plIQ < 99) THEN plIQ + .10
+									 WHEN (plDetermination = 80) AND (plIQ < 99) THEN plIQ + .08
+									 WHEN (plDetermination = 75) AND (plIQ < 99) THEN plIQ + .06
+									 WHEN (plDetermination = 70) AND (plIQ < 99) THEN plIQ + .04
+									 WHEN (plDetermination = 65) AND (plIQ < 99) THEN plIQ + .02
+									 WHEN (plDetermination = 60) AND (plIQ < 99) THEN plIQ + .01
+									 WHEN (plDetermination = 55) AND (plIQ > 20) THEN plIQ - .01 
+									 ELSE plIQ - .02 END,
+				plDefense =		CASE WHEN (plDetermination = 99) AND (plDefense < 99) THEN plDefense + .25
+									 WHEN (plDetermination = 95) AND (plDefense < 99) THEN plDefense + .20
+									 WHEN (plDetermination = 90) AND (plDefense < 99) THEN plDefense + .15
+									 WHEN (plDetermination = 85) AND (plDefense < 99) THEN plDefense + .10
+									 WHEN (plDetermination = 80) AND (plDefense < 99) THEN plDefense + .08
+									 WHEN (plDetermination = 75) AND (plDefense < 99) THEN plDefense + .06
+									 WHEN (plDetermination = 70) AND (plDefense < 99) THEN plDefense + .04
+									 WHEN (plDetermination = 65) AND (plDefense < 99) THEN plDefense + .02
+									 WHEN (plDetermination = 60) AND (plDefense < 99) THEN plDefense + .01 
+									 ELSE (plDefense) END,
+				plOutsideShot = CASE WHEN (plDetermination = 99) AND (plOutsideShot < 99) THEN plOutsideShot + .25
+									 WHEN (plDetermination = 95) AND (plOutsideShot < 99) THEN plOutsideShot + .20
+									 WHEN (plDetermination = 90) AND (plOutsideShot < 99) THEN plOutsideShot + .15
+									 WHEN (plDetermination = 85) AND (plOutsideShot < 99) THEN plOutsideShot + .10
+									 WHEN (plDetermination = 80) AND (plOutsideShot < 99) THEN plOutsideShot + .08
+									 WHEN (plDetermination = 75) AND (plOutsideShot < 99) THEN plOutsideShot + .06
+									 WHEN (plDetermination = 70) AND (plOutsideShot < 99) THEN plOutsideShot + .04
+									 WHEN (plDetermination = 65) AND (plOutsideShot < 99) THEN plOutsideShot + .02
+									 WHEN (plDetermination = 60) AND (plOutsideShot < 99) THEN plOutsideShot + .01 
+									 ELSE (plOutsideShot) END,
+				plInsideShot =  CASE WHEN (plDetermination = 99) AND (plInsideShot < 99) THEN plInsideShot + .25
+								 	 WHEN (plDetermination = 95) AND (plInsideShot < 99) THEN plInsideShot + .20
+								 	 WHEN (plDetermination = 90) AND (plInsideShot < 99) THEN plInsideShot + .15
+								 	 WHEN (plDetermination = 85) AND (plInsideShot < 99) THEN plInsideShot + .10
+								 	 WHEN (plDetermination = 80) AND (plInsideShot < 99) THEN plInsideShot + .08
+									 WHEN (plDetermination = 75) AND (plInsideShot < 99) THEN plInsideShot + .06
+									 WHEN (plDetermination = 70) AND (plInsideShot < 99) THEN plInsideShot + .04
+									 WHEN (plDetermination = 65) AND (plInsideShot < 99) THEN plInsideShot + .02
+									 WHEN (plDetermination = 60) AND (plInsideShot < 99) THEN plInsideShot + .01 
+									 ELSE (plInsideShot) END
+
+			END
+
+		ELSE
+		BEGIN
+			
+			SELECT psSeed,
+			   CONVERT(VARCHAR(30),tmLocation + ' ' + tmName) AS Name,
+			   c.cfName,
+			   d.dvName,
+			   ps.psFRWins,
+			   ps.psCFWins,
+			   ps.psFinalsWins
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		JOIN tblConference c
+			ON c.cfID = t.tmConference
+		JOIN tblDivision d
+			ON d.dvID = t.tmDivision
+
+		END
+END
