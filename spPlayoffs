@@ -1,0 +1,700 @@
+USE [NBADB]
+GO
+/****** Object:  StoredProcedure [dbo].[spPlayoffs]    Script Date: 4/19/2017 12:42:46 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[spPlayoffs]
+AS
+BEGIN
+
+	DECLARE @gmID INT = (SELECT ISNULL(MAX(gmID),0) FROM dbo.tblGames) + 1
+
+	DECLARE @Team1 INT, @Team2 INT, @Team1Points INT, @Team2Points INT
+
+	EXEC [dbo].[spAwardMVPs]
+
+	/****************************EC SEMIS, 1 V. 4 **************************
+	******************************************************************************/
+	SET @Team1 = (
+	SELECT tmID
+	FROM tblPlayoffSeeding ps
+	JOIN tblTeam t
+		ON t.tmID = ps.ps_tmID
+	WHERE psSeed = 1
+		  AND ps_cfID = 0
+		  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+		)
+	
+	SET @Team2 = (
+	SELECT tmID
+	FROM tblPlayoffSeeding ps
+	JOIN tblTeam t
+		ON t.tmID = ps.ps_tmID
+	WHERE psSeed = 4
+		  AND ps_cfID = 0
+		  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+		)
+
+	IF(SELECT MAX(psFRWins) FROM tblPlayoffSeeding WHERE (psSeed = 1 OR psSeed = 4) AND (ps_cfID = 0) AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
+	BEGIN
+
+		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+
+		SET @Team1Points = (SELECT SUM(gsPoints)
+							FROM dbo.tblGameStats gs
+							JOIN dbo.tblPlayer p
+								ON p.plID = gs.gs_plID
+							JOIN dbo.tblTeam t
+								ON t.tmID = p.plTeam
+							WHERE gs_gmID = @gmID AND t.tmID = @Team1
+							GROUP BY t.tmID)
+
+		SET @Team2Points = (SELECT SUM(gsPoints)
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID) - 10
+
+		IF (@Team1Points > @Team2Points)
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE IF (@Team2Points > @Team1Points) 
+		BEGIN
+
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team2
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		EXEC [dbo].[spEndOfSeason]
+
+	END
+
+	/*****************************************************************************
+	******************************************************************************/
+
+	/****************************EC SEMIS, 2 V. 3 **************************
+	******************************************************************************/
+
+	ELSE IF(SELECT MAX(psFRWins) FROM tblPlayoffSeeding WHERE (psSeed = 2 OR psSeed = 3) AND (ps_cfID = 0) AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
+	BEGIN
+
+		SET @Team1 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psSeed = 2
+			  AND ps_cfID = 0
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+	
+		SET @Team2 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psSeed = 3
+			  AND ps_cfID = 0
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+
+		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+
+		SET @Team1Points = (SELECT SUM(gsPoints)
+							FROM dbo.tblGameStats gs
+							JOIN dbo.tblPlayer p
+								ON p.plID = gs.gs_plID
+							JOIN dbo.tblTeam t
+								ON t.tmID = p.plTeam
+							WHERE gs_gmID = @gmID AND t.tmID = @Team1
+							GROUP BY t.tmID)
+
+		SET @Team2Points = (SELECT SUM(gsPoints)
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID) - 5
+
+		IF (@Team1Points > @Team2Points)
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE IF (@Team2Points > @Team1Points) 
+		BEGIN
+
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team2
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		EXEC [dbo].[spEndOfSeason]
+
+	END
+
+	/*****************************************************************************
+	******************************************************************************/
+
+	/****************************WC SEMIS, 1 V. 4 **************************
+	******************************************************************************/
+
+	ELSE IF(SELECT MAX(psFRWins) FROM tblPlayoffSeeding WHERE (psSeed = 1 OR psSeed = 4) AND (ps_cfID = 1) AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
+	BEGIN
+
+		SET @Team1 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psSeed = 1
+			  AND ps_cfID = 1
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+	
+		SET @Team2 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psSeed = 4
+			  AND ps_cfID = 1
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+
+		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+
+		SET @Team1Points = (SELECT SUM(gsPoints)
+							FROM dbo.tblGameStats gs
+							JOIN dbo.tblPlayer p
+								ON p.plID = gs.gs_plID
+							JOIN dbo.tblTeam t
+								ON t.tmID = p.plTeam
+							WHERE gs_gmID = @gmID AND t.tmID = @Team1
+							GROUP BY t.tmID)
+
+		SET @Team2Points = (SELECT SUM(gsPoints)
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID) - 10
+
+		IF (@Team1Points > @Team2Points)
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE IF (@Team2Points > @Team1Points) 
+		BEGIN
+
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team2
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		EXEC [dbo].[spEndOfSeason]
+
+	END
+
+	/*****************************************************************************
+	******************************************************************************/
+
+	/****************************WC SEMIS, 2 V. 3 **************************
+	******************************************************************************/
+
+	ELSE IF(SELECT MAX(psFRWins) FROM tblPlayoffSeeding WHERE (psSeed = 2 OR psSeed = 3) AND (ps_cfID = 1) AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
+	BEGIN 
+
+		SET @Team1 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psSeed = 2
+			  AND ps_cfID = 1
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+	
+		SET @Team2 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psSeed = 3
+			  AND ps_cfID = 1
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+
+		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+
+		SET @Team1Points = (SELECT SUM(gsPoints)
+							FROM dbo.tblGameStats gs
+							JOIN dbo.tblPlayer p
+								ON p.plID = gs.gs_plID
+							JOIN dbo.tblTeam t
+								ON t.tmID = p.plTeam
+							WHERE gs_gmID = @gmID AND t.tmID = @Team1
+							GROUP BY t.tmID)
+
+		SET @Team2Points = (SELECT SUM(gsPoints)
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID) - 5
+
+		IF (@Team1Points > @Team2Points)
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE IF (@Team2Points > @Team1Points) 
+		BEGIN
+
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team2
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFRWins = psFRWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		EXEC [dbo].[spEndOfSeason]
+
+	END
+
+	/*****************************************************************************
+	******************************************************************************/
+
+	/*********************************EC FINALS***********************************
+	******************************************************************************/
+
+	ELSE IF(SELECT MAX(psCFWins) FROM tblPlayoffSeeding WHERE (ps_cfID = 0) AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
+	BEGIN 
+
+		SET @Team1 = (
+		SELECT MIN(tmID)
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psFRWins = 4
+			  AND ps_cfID = 0
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+	
+		SET @Team2 = (
+		SELECT MAX(tmID)
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psFRWins = 4
+			  AND ps_cfID = 0
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+
+		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+
+		SET @Team1Points = (SELECT SUM(gsPoints)
+							FROM dbo.tblGameStats gs
+							JOIN dbo.tblPlayer p
+								ON p.plID = gs.gs_plID
+							JOIN dbo.tblTeam t
+								ON t.tmID = p.plTeam
+							WHERE gs_gmID = @gmID AND t.tmID = @Team1
+							GROUP BY t.tmID)
+
+		SET @Team2Points = (SELECT SUM(gsPoints)
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID) - 5
+
+		IF (@Team1Points > @Team2Points)
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psCFWins = psCFWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE IF (@Team2Points > @Team1Points) 
+		BEGIN
+
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psCFWins = psCFWins + 1
+			WHERE ps_tmID = @Team2
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psCFWins = psCFWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		EXEC [dbo].[spEndOfSeason]
+
+	END
+
+	/*****************************************************************************
+	******************************************************************************/
+
+	/*********************************WC FINALS***********************************
+	******************************************************************************/
+
+	ELSE IF(SELECT MAX(psCFWins) FROM tblPlayoffSeeding WHERE (ps_cfID = 1) AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
+	BEGIN 
+
+		SET @Team1 = (
+		SELECT MIN(tmID)
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psFRWins = 4
+			  AND ps_cfID = 1
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+	
+		SET @Team2 = (
+		SELECT MAX(tmID)
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psFRWins = 4
+			  AND ps_cfID = 1
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+
+		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+
+		SET @Team1Points = (SELECT SUM(gsPoints)
+							FROM dbo.tblGameStats gs
+							JOIN dbo.tblPlayer p
+								ON p.plID = gs.gs_plID
+							JOIN dbo.tblTeam t
+								ON t.tmID = p.plTeam
+							WHERE gs_gmID = @gmID AND t.tmID = @Team1
+							GROUP BY t.tmID)
+
+		SET @Team2Points = (SELECT SUM(gsPoints)
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID) - 5
+
+		IF (@Team1Points > @Team2Points)
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psCFWins = psCFWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE IF (@Team2Points > @Team1Points) 
+		BEGIN
+
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psCFWins = psCFWins + 1
+			WHERE ps_tmID = @Team2
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psCFWins = psCFWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		EXEC [dbo].[spEndOfSeason]
+
+	END
+
+	/*****************************************************************************
+	******************************************************************************/
+
+	/*********************************NBA FINALS***********************************
+	******************************************************************************/
+
+	ELSE IF(SELECT MAX(psFinalsWins) FROM tblPlayoffSeeding WHERE psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
+	BEGIN 
+
+		SET @Team1 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psCFWins = 4
+			  AND ps_cfID = 0
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+	
+		SET @Team2 = (
+		SELECT tmID
+		FROM tblPlayoffSeeding ps
+		JOIN tblTeam t
+			ON t.tmID = ps.ps_tmID
+		WHERE psCFWins = 4
+			  AND ps_cfID = 1
+			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+			)
+
+		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+
+		SET @Team1Points = (SELECT SUM(gsPoints)
+							FROM dbo.tblGameStats gs
+							JOIN dbo.tblPlayer p
+								ON p.plID = gs.gs_plID
+							JOIN dbo.tblTeam t
+								ON t.tmID = p.plTeam
+							WHERE gs_gmID = @gmID AND t.tmID = @Team1
+							GROUP BY t.tmID)
+
+		SET @Team2Points = (SELECT SUM(gsPoints)
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID)
+
+		IF (@Team1Points > @Team2Points)
+		BEGIN
+		
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFinalsWins = psFinalsWins + 1
+			WHERE ps_tmID = @Team1
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE IF (@Team2Points > @Team1Points) 
+		BEGIN
+
+			UPDATE [dbo].[tblPlayoffSeeding]
+			SET psFinalsWins = psFinalsWins + 1
+			WHERE ps_tmID = @Team2
+			AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			WHERE gmID = @gmID
+
+		END
+
+		ELSE
+		BEGIN
+
+			IF((SELECT SUM(plDefense) FROM tblPlayer WHERE plTeam = @Team1) > (SELECT SUM(plDefense) FROM tblPlayer WHERE plTeam = @Team2))
+			BEGIN
+
+				UPDATE [dbo].[tblPlayoffSeeding]
+				SET psFinalsWins = psFinalsWins + 1
+				WHERE ps_tmID = @Team1
+				AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+				UPDATE dbo.tblGames 
+				SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
+				WHERE gmID = @gmID
+
+			END
+
+			ELSE IF((SELECT SUM(plDefense) FROM tblPlayer WHERE plTeam = @Team1) < (SELECT SUM(plDefense) FROM tblPlayer WHERE plTeam = @Team2))
+			BEGIN
+
+				UPDATE [dbo].[tblPlayoffSeeding]
+				SET psFinalsWins = psFinalsWins + 1
+				WHERE ps_tmID = @Team2
+				AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
+
+				UPDATE dbo.tblGames 
+				SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points + 1
+				WHERE gmID = @gmID
+
+			END
+
+		END
+
+		EXEC [dbo].[spEndOfSeason]
+
+	END
+
+	/*****************************************************************************
+	******************************************************************************/
+END
