@@ -1,0 +1,130 @@
+USE [NBADB]
+GO
+/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/19/2017 12:49:52 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[spPlayerTeamView]
+@ID INT
+AS
+BEGIN
+
+IF (@ID = 1)
+BEGIN
+	SELECT [plID]
+		,[plFirstName]
+		,[plLastName]
+		,tblTeam.tmName
+		,[plTeam]
+		,[plInsideShot]
+		,[plOutsideShot]
+		,[plInsideShot] + ([plOutsideShot] * 1.5) AS ShotOverall
+		,[plPass]
+		,[plRebound]
+		,[plDefense]
+		,[plIQ]
+		,[plDetermination]
+	FROM [NBADB].[dbo].[tblPlayer]
+	JOIN tblTeam
+		ON tblTeam.tmID = tblPlayer.plTeam
+END
+
+ELSE IF (@ID = 2)
+BEGIN
+	SELECT t.tmLocation + ' ' + t.tmName AS TeamName
+		,SUM(([plInsideShot])
+		+ ([plOutsideShot] * 1.5)
+		+ ([plPass])
+		+ ([plRebound])
+		+ ([plDefense] * 1.25)
+		+ ([plIQ]) * 1.75) AS Total
+	FROM [NBADB].[dbo].[tblPlayer] p
+	JOIN tblTeam t
+		ON t.tmID = p.plTeam
+	JOIN tblDivision d
+		ON d.dvID = t.tmDivision
+	GROUP BY t.tmLocation, t.tmName
+	ORDER BY Total DESC
+END
+
+ELSE IF (@ID = 3)
+BEGIN
+	  SELECT p.plID,
+		  p.plFirstName + ' ' + p.plLastName as Name
+		  ,SUM(([plInsideShot])
+		  + ([plOutsideShot] * 1.5)
+		  + ([plPass])
+		  + ([plRebound])
+		  + ([plDefense] * 1.25)
+		  + ([plIQ] * 1.75)) AS Total
+	  FROM [NBADB].[dbo].[tblPlayer] p
+	  JOIN tblTeam t
+		ON t.tmID = p.plTeam
+	JOIN tblDivision d
+		ON d.dvID = t.tmDivision
+	  GROUP BY p.plID, p.plFirstName,p.plLastName
+	  ORDER BY Total DESC
+END
+
+ELSE IF (@ID = 4)
+BEGIN
+	SELECT t.tmLocation + ' ' + t.tmName AS TeamName
+		,AVG(plDetermination) as AvgDet
+	FROM [NBADB].[dbo].[tblPlayer] p
+	JOIN tblTeam t
+		ON t.tmID = p.plTeam
+	JOIN tblDivision d
+		ON d.dvID = t.tmDivision
+	GROUP BY t.tmLocation, t.tmName
+	ORDER BY AvgDet DESC
+END
+
+ELSE IF (@ID = 5)
+BEGIN
+	DELETE FROM tblPlayer
+	INSERT INTO tblPlayer
+	SELECT
+	plID,plFirstName,plLastName,
+	plTeam,plInsideShot,plOutsideShot,
+	plPass,plRebound,plDefense,
+	plIQ,plDetermination
+	FROM tblPlayerBackup
+END
+
+ELSE IF (@ID = 6)
+BEGIN
+
+	DELETE FROM tblPlayerBackup
+	INSERT INTO tblPlayerBackup
+	SELECT
+	plID,plFirstName,plLastName,
+	plTeam,plInsideShot,plOutsideShot,
+	plPass,plRebound,plDefense,
+	plIQ,getdate(),plDetermination
+	FROM tblPlayer
+END
+
+ELSE IF (@ID = 666)
+BEGIN
+	UPDATE [NBADB].[dbo].[tblTeam]
+	SET tmDivLosses = 0, tmDivWins = 0, tmConfLosses = 0, tmConfWins = 0, tmTotalWins = 0, tmTotalLosses = 0, tmNonConfLosses = 0, tmNonConfWins = 0
+	DELETE FROM tblGameStats
+	DELETE FROM tblGames
+	DELETE FROM tblMVP
+	DELETE FROM tblNBAChampion
+	DELETE FROM tblNBAStandings
+	DELETE FROM tblPlayoffSeeding
+
+	DELETE FROM tblPlayer
+	INSERT INTO tblPlayer
+	SELECT
+	plID,plFirstName,plLastName,
+	plTeam,plInsideShot,plOutsideShot,
+	plPass,plRebound,plDefense,
+	plIQ,plDetermination
+	FROM tblPlayerBackup
+
+END
+
+END
