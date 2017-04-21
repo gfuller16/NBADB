@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spBestTeamHistory]    Script Date: 4/19/2017 12:50:33 PM ******/
+/****** Object:  StoredProcedure [dbo].[spBestTeamHistory]    Script Date: 4/21/2017 2:29:55 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -22,7 +22,7 @@ BEGIN
 	JOIN [dbo].[tblTeam] t
 		ON t.tmID = n.st_tmID
 	ORDER BY
-	stWinPercentage DESC
+	[stWinPercentage] DESC, [stYear] DESC
 END
 
 ELSE IF (@ID = 2)
@@ -31,7 +31,7 @@ BEGIN
 		t.tmLocation + ' ' + t.tmName AS [TeamName]
 		,SUM([st_tmTotalWins]) AS All_TimeWins
 		,SUM([st_tmTotalLosses]) AS All_TimeLosses
-		,CONVERT(DECIMAL(6,3),CONVERT(DECIMAL,SUM([st_tmTotalWins]))/(CONVERT(DECIMAL,SUM([st_tmTotalWins]))+CONVERT(DECIMAL,SUM([st_tmTotalLosses])))) AS All_TimeWinPct
+		,CONVERT(DECIMAL(6,3),CONVERT(DECIMAL,SUM([st_tmTotalWins]))/(CONVERT(DECIMAL,SUM([st_tmTotalWins]))+CONVERT(DECIMAL,SUM([st_tmTotalLosses])))) AS [All_TimeWinPct]
 	FROM [NBADB].[dbo].[tblNBAStandings] n
 	JOIN [dbo].[tblTeam] t
 		ON t.tmID = n.st_tmID
@@ -39,7 +39,7 @@ BEGIN
 	t.tmLocation,
 	t.tmName
 	ORDER BY
-	All_TimeWinPct DESC
+	[All_TimeWinPct] DESC
 END
 
 END
