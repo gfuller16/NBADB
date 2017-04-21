@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/19/2017 12:49:52 PM ******/
+/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/21/2017 3:11:59 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -25,6 +25,7 @@ BEGIN
 		,[plDefense]
 		,[plIQ]
 		,[plDetermination]
+		,[plExperience]
 	FROM [NBADB].[dbo].[tblPlayer]
 	JOIN tblTeam
 		ON tblTeam.tmID = tblPlayer.plTeam
@@ -33,12 +34,13 @@ END
 ELSE IF (@ID = 2)
 BEGIN
 	SELECT t.tmLocation + ' ' + t.tmName AS TeamName
-		,SUM(([plInsideShot])
-		+ ([plOutsideShot] * 1.5)
-		+ ([plPass])
-		+ ([plRebound])
-		+ ([plDefense] * 1.25)
-		+ ([plIQ]) * 1.75) AS Total
+		  ,SUM(([plInsideShot])
+		  + ([plOutsideShot] * 1.75)
+		  + ([plPass] * 1.25)
+		  + ([plRebound] * 1.25)
+		  + ([plDefense])
+		  + ([plIQ] * 2)
+		  + ([plDetermination] * 1.5)) AS Total
 	FROM [NBADB].[dbo].[tblPlayer] p
 	JOIN tblTeam t
 		ON t.tmID = p.plTeam
@@ -53,11 +55,12 @@ BEGIN
 	  SELECT p.plID,
 		  p.plFirstName + ' ' + p.plLastName as Name
 		  ,SUM(([plInsideShot])
-		  + ([plOutsideShot] * 1.5)
-		  + ([plPass])
-		  + ([plRebound])
-		  + ([plDefense] * 1.25)
-		  + ([plIQ] * 1.75)) AS Total
+		  + ([plOutsideShot] * 1.75)
+		  + ([plPass] * 1.25)
+		  + ([plRebound] * 1.25)
+		  + ([plDefense])
+		  + ([plIQ] * 2)
+		  + ([plDetermination] * 1.5)) AS Total
 	  FROM [NBADB].[dbo].[tblPlayer] p
 	  JOIN tblTeam t
 		ON t.tmID = p.plTeam
@@ -65,19 +68,6 @@ BEGIN
 		ON d.dvID = t.tmDivision
 	  GROUP BY p.plID, p.plFirstName,p.plLastName
 	  ORDER BY Total DESC
-END
-
-ELSE IF (@ID = 4)
-BEGIN
-	SELECT t.tmLocation + ' ' + t.tmName AS TeamName
-		,AVG(plDetermination) as AvgDet
-	FROM [NBADB].[dbo].[tblPlayer] p
-	JOIN tblTeam t
-		ON t.tmID = p.plTeam
-	JOIN tblDivision d
-		ON d.dvID = t.tmDivision
-	GROUP BY t.tmLocation, t.tmName
-	ORDER BY AvgDet DESC
 END
 
 ELSE IF (@ID = 5)
@@ -88,7 +78,7 @@ BEGIN
 	plID,plFirstName,plLastName,
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
-	plIQ,plDetermination
+	plIQ,plDetermination,plExperience
 	FROM tblPlayerBackup
 END
 
@@ -101,7 +91,7 @@ BEGIN
 	plID,plFirstName,plLastName,
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
-	plIQ,getdate(),plDetermination
+	plIQ,getdate(),plDetermination,plExperience
 	FROM tblPlayer
 END
 
@@ -122,7 +112,7 @@ BEGIN
 	plID,plFirstName,plLastName,
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
-	plIQ,plDetermination
+	plIQ,plDetermination,plExperience
 	FROM tblPlayerBackup
 
 END
