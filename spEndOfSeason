@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spEndOfSeason]    Script Date: 4/19/2017 12:44:25 PM ******/
+/****** Object:  StoredProcedure [dbo].[spEndOfSeason]    Script Date: 4/21/2017 2:29:49 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -38,47 +38,89 @@ BEGIN
 
 				UPDATE NBADB.dbo.tblPlayer
 				SET 
-				plIQ =			CASE WHEN (plDetermination = 99) AND (plIQ < 99) THEN plIQ + .25
-									 WHEN (plDetermination = 95) AND (plIQ < 99) THEN plIQ + .20
-									 WHEN (plDetermination = 90) AND (plIQ < 99) THEN plIQ + .15
-									 WHEN (plDetermination = 85) AND (plIQ < 99) THEN plIQ + .10
-									 WHEN (plDetermination = 80) AND (plIQ < 99) THEN plIQ + .08
-									 WHEN (plDetermination = 75) AND (plIQ < 99) THEN plIQ + .06
-									 WHEN (plDetermination = 70) AND (plIQ < 99) THEN plIQ + .04
-									 WHEN (plDetermination = 65) AND (plIQ < 99) THEN plIQ + .02
-									 WHEN (plDetermination = 60) AND (plIQ < 99) THEN plIQ + .01
-									 WHEN (plDetermination = 55) AND (plIQ > 20) THEN plIQ - .01 
-									 ELSE plIQ - .02 END,
-				plDefense =		CASE WHEN (plDetermination = 99) AND (plDefense < 99) THEN plDefense + .25
-									 WHEN (plDetermination = 95) AND (plDefense < 99) THEN plDefense + .20
-									 WHEN (plDetermination = 90) AND (plDefense < 99) THEN plDefense + .15
-									 WHEN (plDetermination = 85) AND (plDefense < 99) THEN plDefense + .10
-									 WHEN (plDetermination = 80) AND (plDefense < 99) THEN plDefense + .08
-									 WHEN (plDetermination = 75) AND (plDefense < 99) THEN plDefense + .06
-									 WHEN (plDetermination = 70) AND (plDefense < 99) THEN plDefense + .04
-									 WHEN (plDetermination = 65) AND (plDefense < 99) THEN plDefense + .02
-									 WHEN (plDetermination = 60) AND (plDefense < 99) THEN plDefense + .01 
-									 ELSE (plDefense) END,
-				plOutsideShot = CASE WHEN (plDetermination = 99) AND (plOutsideShot < 99) THEN plOutsideShot + .25
-									 WHEN (plDetermination = 95) AND (plOutsideShot < 99) THEN plOutsideShot + .20
-									 WHEN (plDetermination = 90) AND (plOutsideShot < 99) THEN plOutsideShot + .15
-									 WHEN (plDetermination = 85) AND (plOutsideShot < 99) THEN plOutsideShot + .10
-									 WHEN (plDetermination = 80) AND (plOutsideShot < 99) THEN plOutsideShot + .08
-									 WHEN (plDetermination = 75) AND (plOutsideShot < 99) THEN plOutsideShot + .06
-									 WHEN (plDetermination = 70) AND (plOutsideShot < 99) THEN plOutsideShot + .04
-									 WHEN (plDetermination = 65) AND (plOutsideShot < 99) THEN plOutsideShot + .02
-									 WHEN (plDetermination = 60) AND (plOutsideShot < 99) THEN plOutsideShot + .01 
-									 ELSE (plOutsideShot) END,
-				plInsideShot =  CASE WHEN (plDetermination = 99) AND (plInsideShot < 99) THEN plInsideShot + .25
-								 	 WHEN (plDetermination = 95) AND (plInsideShot < 99) THEN plInsideShot + .20
-								 	 WHEN (plDetermination = 90) AND (plInsideShot < 99) THEN plInsideShot + .15
-								 	 WHEN (plDetermination = 85) AND (plInsideShot < 99) THEN plInsideShot + .10
-								 	 WHEN (plDetermination = 80) AND (plInsideShot < 99) THEN plInsideShot + .08
-									 WHEN (plDetermination = 75) AND (plInsideShot < 99) THEN plInsideShot + .06
-									 WHEN (plDetermination = 70) AND (plInsideShot < 99) THEN plInsideShot + .04
-									 WHEN (plDetermination = 65) AND (plInsideShot < 99) THEN plInsideShot + .02
-									 WHEN (plDetermination = 60) AND (plInsideShot < 99) THEN plInsideShot + .01 
-									 ELSE (plInsideShot) END
+				plIQ =		   CASE WHEN (plExperience < 15) THEN
+									CASE WHEN (plDetermination - plExperience > 97)				 AND (plIQ < 99) THEN plIQ + .90
+										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plIQ < 99) THEN plIQ + .75
+										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plIQ < 99) THEN plIQ + .60
+										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plIQ < 99) THEN plIQ + .45
+										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plIQ < 99) THEN plIQ + .30
+										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plIQ < 99) THEN plIQ + .20
+										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plIQ < 99) THEN plIQ + .15
+										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plIQ < 99) THEN plIQ + .10
+										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plIQ < 99) THEN plIQ + .09
+										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plIQ < 99) THEN plIQ + .08
+										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plIQ < 99) THEN plIQ + .07
+										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plIQ < 99) THEN plIQ + .06
+										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plIQ < 99) THEN plIQ + .05
+										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plIQ < 99) THEN plIQ + .04
+										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plIQ < 99) THEN plIQ + .03
+										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plIQ < 99) THEN plIQ + .02
+										 ELSE plIQ END
+									WHEN (plExperience >= 15) THEN plIQ - .50 END,
+										
+				plDefense =	   CASE WHEN (plExperience < 15) THEN
+									CASE WHEN (plDetermination - plExperience > 97)				 AND (plDefense < 99) THEN plDefense + .90
+										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plDefense < 99) THEN plDefense + .75
+										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plDefense < 99) THEN plDefense + .60
+										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plDefense < 99) THEN plDefense + .45
+										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plDefense < 99) THEN plDefense + .30
+										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plDefense < 99) THEN plDefense + .20
+										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plDefense < 99) THEN plDefense + .15
+										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plDefense < 99) THEN plDefense + .10
+										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plDefense < 99) THEN plDefense + .09
+										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plDefense < 99) THEN plDefense + .08
+										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plDefense < 99) THEN plDefense + .07
+										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plDefense < 99) THEN plDefense + .06
+										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plDefense < 99) THEN plDefense + .05
+										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plDefense < 99) THEN plDefense + .04
+										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plDefense < 99) THEN plDefense + .03
+										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plDefense < 99) THEN plDefense + .02
+										 ELSE plDefense END
+									WHEN (plExperience >= 15) THEN plDefense - .50 END,
+
+				plOutsideShot = CASE WHEN (plExperience < 15) THEN
+									CASE WHEN (plDetermination - plExperience > 97)				 AND (plOutsideShot < 99) THEN plOutsideShot + .90
+										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plOutsideShot < 99) THEN plOutsideShot + .75
+										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plOutsideShot < 99) THEN plOutsideShot + .60
+										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plOutsideShot < 99) THEN plOutsideShot + .45
+										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plOutsideShot < 99) THEN plOutsideShot + .30
+										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plOutsideShot < 99) THEN plOutsideShot + .20
+										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plOutsideShot < 99) THEN plOutsideShot + .15
+										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plOutsideShot < 99) THEN plOutsideShot + .10
+										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plOutsideShot < 99) THEN plOutsideShot + .09
+										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plOutsideShot < 99) THEN plOutsideShot + .08
+										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plOutsideShot < 99) THEN plOutsideShot + .07
+										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plOutsideShot < 99) THEN plOutsideShot + .06
+										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plOutsideShot < 99) THEN plOutsideShot + .05
+										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plOutsideShot < 99) THEN plOutsideShot + .04
+										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plOutsideShot < 99) THEN plOutsideShot + .03
+										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plOutsideShot < 99) THEN plOutsideShot + .02
+										 ELSE plOutsideShot END
+									WHEN (plExperience >= 15) THEN plOutsideShot - .50 END,
+
+				plInsideShot =  CASE WHEN (plExperience < 15) THEN
+									CASE WHEN (plDetermination - plExperience > 97)				 AND (plInsideShot < 99) THEN plInsideShot + .90
+										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plInsideShot < 99) THEN plInsideShot + .75
+										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plInsideShot < 99) THEN plInsideShot + .60
+										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plInsideShot < 99) THEN plInsideShot + .45
+										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plInsideShot < 99) THEN plInsideShot + .30
+										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plInsideShot < 99) THEN plInsideShot + .20
+										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plInsideShot < 99) THEN plInsideShot + .15
+										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plInsideShot < 99) THEN plInsideShot + .10
+										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plInsideShot < 99) THEN plInsideShot + .09
+										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plInsideShot < 99) THEN plInsideShot + .08
+										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plInsideShot < 99) THEN plInsideShot + .07
+										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plInsideShot < 99) THEN plInsideShot + .06
+										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plInsideShot < 99) THEN plInsideShot + .05
+										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plInsideShot < 99) THEN plInsideShot + .04
+										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plInsideShot < 99) THEN plInsideShot + .03
+										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plInsideShot < 99) THEN plInsideShot + .02
+										 ELSE plInsideShot END
+									WHEN (plExperience >= 15) THEN plInsideShot - .50 END
+
+				UPDATE tblPlayer
+				SET plExperience = plExperience + 1
+				WHERE plExperience < 20
 
 			END
 
