@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spSeeMVPRace]    Script Date: 4/19/2017 12:47:32 PM ******/
+/****** Object:  StoredProcedure [dbo].[spSeeMVPRace]    Script Date: 4/21/2017 2:42:21 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -74,11 +74,14 @@ BEGIN
 		
 		SELECT
 			p.plID,
-			p.plFirstName + ' ' + p.plLastName as Name,
+			p.plFirstName + ' ' + ISNULL(p.plLastName,'') as [Player Name],
+			t.tmLocation + ' ' + t.tmName as [Team Name],
 			CONVERT(DECIMAL(5,2),SUM(CONVERT(DECIMAL(4,1),rsRank))/3) as Average
 		FROM #RSMvp r
 		JOIN tblPlayer p
 			ON p.plID = r.rs_plID
+		JOIN tblTeam t
+			ON t.tmID = p.plTeam
 		GROUP BY p.plID,p.plFirstName,p.plLastName
 		ORDER BY CONVERT(DECIMAL(5,2),SUM(CONVERT(DECIMAL(4,1),rsRank))/3)
 
@@ -157,11 +160,14 @@ BEGIN
 
 		SELECT
 			p.plID,
-			p.plFirstName + ' ' + p.plLastName as Name,
+			p.plFirstName + ' ' + ISNULL(p.plLastName,'') as [Player Name],
+			t.tmLocation + ' ' + t.tmName as [Team Name],
 			CONVERT(DECIMAL(4,2),SUM(CONVERT(DECIMAL(4,1),f.fsRank))/4) as Average
 		FROM #FinalsMvp f
 		JOIN tblPlayer p
 			ON p.plID = f.fs_plID
+		JOIN tblTeam t
+			ON t.tmID = p.plTeam
 		GROUP BY p.plID,p.plFirstName,p.plLastName
 		ORDER BY CONVERT(DECIMAL(4,2),SUM(CONVERT(DECIMAL(4,1),f.fsRank))/3)
 END
