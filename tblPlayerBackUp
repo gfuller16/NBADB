@@ -1,7 +1,7 @@
 USE [NBADB]
 GO
 
-/****** Object:  Table [dbo].[tblPlayerBackUp]    Script Date: 4/19/2017 12:55:22 PM ******/
+/****** Object:  Table [dbo].[tblPlayerBackUp]    Script Date: 4/21/2017 2:35:40 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -23,7 +23,8 @@ CREATE TABLE [dbo].[tblPlayerBackUp](
 	[plDefense] [decimal](5, 2) NULL,
 	[plIQ] [decimal](5, 2) NULL,
 	[plDate] [datetime] NOT NULL,
-	[plDetermination] [decimal](5, 2) NULL
+	[plDetermination] [decimal](5, 2) NULL,
+	[plExperience] [int] NULL
 ) ON [PRIMARY]
 
 GO
@@ -32,4 +33,7 @@ SET ANSI_PADDING OFF
 GO
 
 ALTER TABLE [dbo].[tblPlayerBackUp] ADD  DEFAULT (getdate()) FOR [plDate]
+GO
+
+ALTER TABLE [dbo].[tblPlayerBackUp] ADD  DEFAULT ((0)) FOR [plExperience]
 GO
