@@ -1,17 +1,17 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spTopStats]    Script Date: 4/19/2017 12:48:21 PM ******/
+/****** Object:  StoredProcedure [dbo].[spTopStats]    Script Date: 4/21/2017 2:29:52 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE PROCEDURE [dbo].[spTopStats]
-@ORDER INT
+@ORDER VARCHAR(3)
 AS
 BEGIN
 
-IF (@ORDER = 1)
+IF (@ORDER = '1')
 BEGIN
 
 	SET NOCOUNT ON
@@ -70,7 +70,7 @@ BEGIN
 
 END
 
-ELSE IF (@ORDER = 2)
+ELSE IF (@ORDER = '2')
 BEGIN
 
 	SELECT CONVERT(VARCHAR(30),t.tmLocation + ' ' + t.tmName) as [Team Name]
@@ -88,7 +88,7 @@ BEGIN
 
 END
 
-ELSE IF (@ORDER = 3)
+ELSE IF (@ORDER = '3')
 BEGIN
 
 	SELECT CONVERT(VARCHAR(30),t.tmLocation + ' ' + t.tmName) as [Team Name]
@@ -103,6 +103,26 @@ BEGIN
 		ON t.tmID = p.plTeam
 	GROUP BY t.tmLocation,t.tmName,t.tmTotalWins,t.tmTotalLosses
 	ORDER BY AvgRebounds DESC, GamesPlayed DESC, AvgPoints DESC, AvgAssists DESC
+
+END
+
+ELSE IF (LEN(@ORDER) > 1)
+BEGIN
+
+	SET @ORDER = CONVERT(INT,@ORDER)
+
+	SELECT p.plID,CONVERT(VARCHAR(20),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints])))) as AvgPoints
+		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists])))) as AvgAssists
+		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds])))) as AvgRebounds
+		  ,COUNT([gs_gmID]) as GamesPlayed
+	  FROM [NBADB].[dbo].[tblGameStats] gs
+	  JOIN tblPlayer p
+		ON p.plID = gs.gs_plID
+	  JOIN tblTeam t
+		ON t.tmID = p.plTeam
+	WHERE p.plID = @ORDER
+	GROUP BY p.plID,p.plFirstName,p.plLastName,t.tmLocation
 
 END
 
