@@ -82,7 +82,7 @@ BEGIN
 			ON p.plID = r.rs_plID
 		JOIN tblTeam t
 			ON t.tmID = p.plTeam
-		GROUP BY p.plID,p.plFirstName,p.plLastName
+		GROUP BY p.plID,p.plFirstName,p.plLastName,t.tmLocation,t.tmName
 		ORDER BY CONVERT(DECIMAL(5,2),SUM(CONVERT(DECIMAL(4,1),rsRank))/3)
 
 END
@@ -168,7 +168,7 @@ BEGIN
 			ON p.plID = f.fs_plID
 		JOIN tblTeam t
 			ON t.tmID = p.plTeam
-		GROUP BY p.plID,p.plFirstName,p.plLastName
+		GROUP BY p.plID,p.plFirstName,p.plLastName,t.tmLocation,t.tmName
 		ORDER BY CONVERT(DECIMAL(4,2),SUM(CONVERT(DECIMAL(4,1),f.fsRank))/3)
 END
 
