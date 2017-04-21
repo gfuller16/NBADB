@@ -1,7 +1,7 @@
 USE [NBADB]
 GO
 
-/****** Object:  Table [dbo].[tblPlayer]    Script Date: 4/19/2017 12:55:20 PM ******/
+/****** Object:  Table [dbo].[tblPlayer]    Script Date: 4/21/2017 2:35:00 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -23,6 +23,7 @@ CREATE TABLE [dbo].[tblPlayer](
 	[plDefense] [decimal](5, 2) NULL,
 	[plIQ] [decimal](5, 2) NULL,
 	[plDetermination] [decimal](5, 2) NULL,
+	[plExperience] [int] NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[plID] ASC
@@ -32,6 +33,9 @@ PRIMARY KEY CLUSTERED
 GO
 
 SET ANSI_PADDING OFF
+GO
+
+ALTER TABLE [dbo].[tblPlayer] ADD  DEFAULT ((0)) FOR [plExperience]
 GO
 
 ALTER TABLE [dbo].[tblPlayer]  WITH CHECK ADD FOREIGN KEY([plTeam])
