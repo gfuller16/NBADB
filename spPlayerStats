@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spPlayerStats]    Script Date: 4/19/2017 12:41:09 PM ******/
+/****** Object:  StoredProcedure [dbo].[spPlayerStats]    Script Date: 4/24/2017 3:02:30 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -19,42 +19,53 @@ BEGIN
 	DECLARE @P1IQ		   INT = (SELECT RAND()*(100-1)+1)
 	DECLARE @P1Points INT,@P1Assists INT, @P1Rebounds INT,@P1Name VARCHAR(50)
 
-	SET @P1Points = (SELECT  (CAST(CASE WHEN (@P1InsideShot < (plInsideShot/7.5)) THEN (SELECT RAND()*(15-13)+13)
-				 WHEN (@P1InsideShot < (plInsideShot/3.25))		THEN (SELECT RAND()*(12-8)+8)
-				 WHEN (@P1InsideShot < (plInsideShot/1.25))			THEN (SELECT RAND()*(7-3)+3)
+	SET @P1Points = (SELECT
+			(CAST(CASE WHEN (@P1InsideShot < (plInsideShot/9)) THEN (SELECT RAND()*(22-12)+12)
+				 WHEN (@P1InsideShot < (plInsideShot/3))		THEN (SELECT RAND()*(12-7)+7)
+				 WHEN (@P1InsideShot < (plInsideShot))			THEN (SELECT RAND()*(7-2)+2)
 				 ELSE (SELECT RAND()*(2-0)+0) END AS INT) * 2)
 			+
-			(CAST(CASE WHEN (@P1OutsideShot < (plOutsideShot/7.5)) THEN (SELECT RAND()*(10-6)+6)
-				 WHEN (@P1OutsideShot < (plOutsideShot/3.25))		  THEN (SELECT RAND()*(5-4)+4)
-				 WHEN (@P1OutsideShot < (plOutsideShot/1.25))			  THEN (SELECT RAND()*(3-2)+2)
-				 ELSE (SELECT RAND()*(1-0)+0) END AS INT) * 3)
+			(CAST(CASE WHEN (@P1OutsideShot < (plOutsideShot/9)) THEN (SELECT RAND()*(16-11)+11)
+				 WHEN (@P1OutsideShot < (plOutsideShot/3))		  THEN (SELECT RAND()*(11-6)+6)
+				 WHEN (@P1OutsideShot < (plOutsideShot))			  THEN (SELECT RAND()*(6-2)+2)
+				 ELSE (SELECT RAND()*(2-0)+0) END AS INT) * 3)
 			+
-			CAST(CASE WHEN (@P1Defense < (plDefense/7.5)) THEN (SELECT RAND()*(14-10)+10)
-				 WHEN (@P1Defense < (plDefense/3.25))		  THEN (SELECT RAND()*(9-6)+6)
-				 WHEN (@P1Defense < (plDefense/1.25))			  THEN (SELECT RAND()*(5-3)+3)
+			CAST(CASE WHEN (@P1IQ < (plIQ/9)) THEN (SELECT RAND()*(18-12)+12)
+				 WHEN (@P1IQ < (plIQ/3))	   THEN (SELECT RAND()*(12-6)+6)
+				 WHEN (@P1IQ < (plIQ))		   THEN (SELECT RAND()*(6-2)+2)
 				 ELSE (SELECT RAND()*(2-0)+0) END AS INT)
-			+
-			CAST(CASE WHEN (@P1IQ < (plIQ/7.5)) THEN (SELECT RAND()*(25-15)+15)
-				 WHEN (@P1IQ < (plIQ/3.25))	   THEN (SELECT RAND()*(14-1)+11)
-				 WHEN (@P1IQ < (plIQ/1.25))		   THEN (SELECT RAND()*(10-6)+6)
-				 ELSE (SELECT RAND()*(5-0)+0) END AS INT)
 			FROM dbo.tblPlayer p
 			WHERE @plID = plID)
 
 	SET @P1Assists = (SELECT
-			CAST(CASE WHEN (@P1Pass < (plPass/7.5)) THEN (SELECT RAND()*(25-19)+19)
-				 WHEN (@P1Pass < (plPass/3.25))		THEN (SELECT RAND()*(18-12)+12)
-				 WHEN (@P1Pass < (plPass/1.25))			THEN (SELECT RAND()*(11-6)+6)
-				 ELSE (SELECT RAND()*(5-0)+0) END AS INT)
+			CAST(CASE WHEN (@P1Pass < (plPass/9)) THEN (SELECT RAND()*(20-14)+14)
+				 WHEN (@P1Pass < (plPass/3))		THEN (SELECT RAND()*(14-7)+7)
+				 WHEN (@P1Pass < (plPass))			THEN (SELECT RAND()*(7-2)+2)
+				 ELSE (SELECT RAND()*(2-0)+0) END AS INT)
+			+
+			CAST(CASE WHEN (@P1IQ < (plIQ/9)) THEN (SELECT RAND()*(15-10)+10)
+				 WHEN (@P1IQ < (plIQ/3))	   THEN (SELECT RAND()*(10-6)+6)
+				 WHEN (@P1IQ < (plIQ))		   THEN (SELECT RAND()*(6-2)+2)
+				 ELSE (SELECT RAND()*(2-0)+0) END AS INT)
 			AS AssistTotal
 			FROM dbo.tblPlayer p
 			WHERE @plID = plID)
 
 	SET @P1Rebounds = (SELECT
-			CAST(CASE WHEN (@P1Rebound < (plRebound/7.5)) THEN (SELECT RAND()*(30-19)+19)
-				 WHEN (@P1Rebound < (plRebound/3.25))		 THEN (SELECT RAND()*(18-12)+12)
-				 WHEN (@P1Rebound < (plRebound/1.25))			 THEN (SELECT RAND()*(11-6)+6)
-				 ELSE (SELECT RAND()*(5-0)+0) END AS INT)
+			CAST(CASE WHEN (@P1Rebound < (plRebound/9)) THEN (SELECT RAND()*(20-12)+12)
+				 WHEN (@P1Rebound < (plRebound/3))		 THEN (SELECT RAND()*(12-6)+6)
+				 WHEN (@P1Rebound < (plRebound))			 THEN (SELECT RAND()*(6-2)+2)
+				 ELSE (SELECT RAND()*(2-0)+0) END AS INT)
+			+
+			CAST(CASE WHEN (@P1Defense < (plDefense/9)) THEN (SELECT RAND()*(12-9)+9)
+				 WHEN (@P1Defense < (plDefense/3))		  THEN (SELECT RAND()*(9-4)+4)
+				 WHEN (@P1Defense < (plDefense))			  THEN (SELECT RAND()*(4-2)+2)
+				 ELSE (SELECT RAND()*(2-0)+0) END AS INT)
+			+
+			CAST(CASE WHEN (@P1IQ < (plIQ/9)) THEN (SELECT RAND()*(11-8)+8)
+				 WHEN (@P1IQ < (plIQ/3))	   THEN (SELECT RAND()*(8-4)+4)
+				 WHEN (@P1IQ < (plIQ))		   THEN (SELECT RAND()*(4-2)+2)
+				 ELSE (SELECT RAND()*(2-0)+0) END AS INT)
 			AS ReboundTotal
 	FROM dbo.tblPlayer p
 	WHERE @plID = plID)
