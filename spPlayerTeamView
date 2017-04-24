@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/21/2017 3:11:59 PM ******/
+/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/24/2017 1:16:44 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -15,6 +15,7 @@ BEGIN
 	SELECT [plID]
 		,[plFirstName]
 		,[plLastName]
+		,po.[poShortDesc] as [Position]
 		,tblTeam.tmName
 		,[plTeam]
 		,[plInsideShot]
@@ -26,19 +27,22 @@ BEGIN
 		,[plIQ]
 		,[plDetermination]
 		,[plExperience]
-	FROM [NBADB].[dbo].[tblPlayer]
+	FROM [NBADB].[dbo].[tblPlayer] pl
 	JOIN tblTeam
-		ON tblTeam.tmID = tblPlayer.plTeam
+		ON tblTeam.tmID = pl.plTeam
+	JOIN tblPosition po
+		ON po.poID = pl.plPosition
+
 END
 
 ELSE IF (@ID = 2)
 BEGIN
 	SELECT t.tmLocation + ' ' + t.tmName AS TeamName
-		  ,SUM(([plInsideShot])
+		  ,SUM(([plInsideShot] * 1.15)
 		  + ([plOutsideShot] * 1.75)
-		  + ([plPass] * 1.25)
-		  + ([plRebound] * 1.25)
-		  + ([plDefense])
+		  + ([plPass] * 1.5)
+		  + ([plRebound] * 1.5)
+		  + ([plDefense] * 1.25)
 		  + ([plIQ] * 2)
 		  + ([plDetermination] * 1.5)) AS Total
 	FROM [NBADB].[dbo].[tblPlayer] p
@@ -54,11 +58,11 @@ ELSE IF (@ID = 3)
 BEGIN
 	  SELECT p.plID,
 		  p.plFirstName + ' ' + p.plLastName as Name
-		  ,SUM(([plInsideShot])
+		  ,SUM(([plInsideShot] * 1.15)
 		  + ([plOutsideShot] * 1.75)
-		  + ([plPass] * 1.25)
-		  + ([plRebound] * 1.25)
-		  + ([plDefense])
+		  + ([plPass] * 1.5)
+		  + ([plRebound] * 1.5)
+		  + ([plDefense] * 1.25)
 		  + ([plIQ] * 2)
 		  + ([plDetermination] * 1.5)) AS Total
 	  FROM [NBADB].[dbo].[tblPlayer] p
@@ -78,7 +82,8 @@ BEGIN
 	plID,plFirstName,plLastName,
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
-	plIQ,plDetermination,plExperience
+	plIQ,plDetermination,plExperience,
+	plPosition
 	FROM tblPlayerBackup
 END
 
@@ -92,6 +97,7 @@ BEGIN
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
 	plIQ,getdate(),plDetermination,plExperience
+	,plPosition
 	FROM tblPlayer
 END
 
@@ -112,7 +118,8 @@ BEGIN
 	plID,plFirstName,plLastName,
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
-	plIQ,plDetermination,plExperience
+	plIQ,plDetermination,plExperience,
+	plPosition
 	FROM tblPlayerBackup
 
 END
