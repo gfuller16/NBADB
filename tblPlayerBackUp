@@ -1,7 +1,7 @@
 USE [NBADB]
 GO
 
-/****** Object:  Table [dbo].[tblPlayerBackUp]    Script Date: 4/21/2017 2:35:40 PM ******/
+/****** Object:  Table [dbo].[tblPlayerBackUp]    Script Date: 4/24/2017 1:18:13 PM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -24,7 +24,8 @@ CREATE TABLE [dbo].[tblPlayerBackUp](
 	[plIQ] [decimal](5, 2) NULL,
 	[plDate] [datetime] NOT NULL,
 	[plDetermination] [decimal](5, 2) NULL,
-	[plExperience] [int] NULL
+	[plExperience] [int] NULL,
+	[plPosition] [int] NULL
 ) ON [PRIMARY]
 
 GO
@@ -36,4 +37,8 @@ ALTER TABLE [dbo].[tblPlayerBackUp] ADD  DEFAULT (getdate()) FOR [plDate]
 GO
 
 ALTER TABLE [dbo].[tblPlayerBackUp] ADD  DEFAULT ((0)) FOR [plExperience]
+GO
+
+ALTER TABLE [dbo].[tblPlayerBackUp]  WITH CHECK ADD FOREIGN KEY([plPosition])
+REFERENCES [dbo].[tblPosition] ([poID])
 GO
