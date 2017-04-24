@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spScheduleGame]    Script Date: 4/19/2017 12:37:48 PM ******/
+/****** Object:  StoredProcedure [dbo].[spScheduleGame]    Script Date: 4/24/2017 3:07:03 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -72,7 +72,7 @@ BEGIN
 
 			SELECT   
 			ERROR_NUMBER() AS ErrorNumber  
-		   ,ERROR_MESSAGE() AS ErrorMessage; 
+		   ,ERROR_MESSAGE() AS ErrorMessage;
 
 			RAISERROR('ERROR', 16, 10)
 
@@ -88,7 +88,7 @@ BEGIN
 
 		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(gsPoints)
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -97,7 +97,7 @@ BEGIN
 								WHERE gs_gmID = @gmID AND t.tmID = @Team1
 								GROUP BY t.tmID)
 
-		SET @Team2Points = (SELECT SUM(gsPoints)
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -270,7 +270,7 @@ BEGIN
 
 		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(gsPoints)
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -279,7 +279,7 @@ BEGIN
 								WHERE gs_gmID = @gmID AND t.tmID = @Team1
 								GROUP BY t.tmID)
 
-		SET @Team2Points = (SELECT SUM(gsPoints)
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -448,7 +448,7 @@ BEGIN
 
 		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(gsPoints)
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -457,7 +457,7 @@ BEGIN
 								WHERE gs_gmID = @gmID AND t.tmID = @Team1
 								GROUP BY t.tmID)
 
-		SET @Team2Points = (SELECT SUM(gsPoints)
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
