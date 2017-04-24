@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spTopStats]    Script Date: 4/21/2017 2:29:52 PM ******/
+/****** Object:  StoredProcedure [dbo].[spTopStats]    Script Date: 4/24/2017 1:17:33 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -15,7 +15,9 @@ IF (@ORDER = '1')
 BEGIN
 
 	SET NOCOUNT ON
-	SELECT TOP 10 CONVERT(VARCHAR(20),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+	SELECT TOP 10 CONVERT(VARCHAR(30),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name
+		  ,CONVERT(VARCHAR(17),t.tmLocation) as Location
+		  ,po.[poShortDesc] AS [Position]
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints])))) as AvgPoints
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists])))) as AvgAssists
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds])))) as AvgRebounds
@@ -25,10 +27,13 @@ BEGIN
 		ON p.plID = gs.gs_plID
 	  JOIN tblTeam t
 		ON t.tmID = p.plTeam
-	GROUP BY p.plFirstName,p.plLastName,t.tmLocation
+	  JOIN tblPosition po
+		ON po.poID = p.plPosition
+	GROUP BY p.plFirstName,p.plLastName,t.tmLocation,po.[poShortDesc]
 	ORDER BY CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints]))) DESC, GamesPlayed DESC,CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists]))) DESC, CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds]))) DESC
 
-	SELECT TOP 10 CONVERT(VARCHAR(20),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+	SELECT TOP 10 CONVERT(VARCHAR(30),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+		  ,po.[poShortDesc] AS [Position]
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints])))) as AvgPoints
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists])))) as AvgAssists
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds])))) as AvgRebounds
@@ -38,10 +43,13 @@ BEGIN
 		ON p.plID = gs.gs_plID
 	  JOIN tblTeam t
 		ON t.tmID = p.plTeam
-	GROUP BY p.plFirstName,p.plLastName,t.tmLocation
+	  JOIN tblPosition po
+		ON po.poID = p.plPosition
+	GROUP BY p.plFirstName,p.plLastName,t.tmLocation,po.[poShortDesc]
 	ORDER BY CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists]))) DESC, GamesPlayed DESC, CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints]))) DESC, CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds]))) DESC
 
-	SELECT TOP 10 CONVERT(VARCHAR(20),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+	SELECT TOP 10 CONVERT(VARCHAR(30),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+		  ,po.[poShortDesc] AS [Position]
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints])))) as AvgPoints
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists])))) as AvgAssists
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds])))) as AvgRebounds
@@ -51,7 +59,9 @@ BEGIN
 		ON p.plID = gs.gs_plID
 	  JOIN tblTeam t
 		ON t.tmID = p.plTeam
-	GROUP BY p.plFirstName,p.plLastName,t.tmLocation
+	  JOIN tblPosition po
+		ON po.poID = p.plPosition
+	GROUP BY p.plFirstName,p.plLastName,t.tmLocation,po.[poShortDesc]
 	ORDER BY CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds]))) DESC, GamesPlayed DESC, CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints]))) DESC, CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists]))) DESC
 
 
@@ -111,7 +121,8 @@ BEGIN
 
 	SET @ORDER = CONVERT(INT,@ORDER)
 
-	SELECT p.plID,CONVERT(VARCHAR(20),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+	SELECT p.plID,CONVERT(VARCHAR(30),p.plFirstName + ' ' + ISNULL(p.plLastName,'')) as Name,CONVERT(VARCHAR(17),t.tmLocation) as Location
+		  ,po.[poShortDesc] AS [Position]
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsPoints])))) as AvgPoints
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsAssists])))) as AvgAssists
 		  ,CONVERT(VARCHAR(15),CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),[gsRebounds])))) as AvgRebounds
@@ -121,8 +132,10 @@ BEGIN
 		ON p.plID = gs.gs_plID
 	  JOIN tblTeam t
 		ON t.tmID = p.plTeam
+	  JOIN tblPosition po
+		ON po.poID = p.plPosition
 	WHERE p.plID = @ORDER
-	GROUP BY p.plID,p.plFirstName,p.plLastName,t.tmLocation
+	GROUP BY p.plID,p.plFirstName,p.plLastName,t.tmLocation,po.[poShortDesc]
 
 END
 
