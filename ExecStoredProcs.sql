@@ -1,17 +1,19 @@
 USE NBADB
 GO
 
-EXEC [spStandings]
-
 EXEC [spWinners] 1
 EXEC [spWinners] 2
 
 EXEC [spSeeMVPRace] 1
 EXEC [spSeeMVPRace] 2
 
-EXEC [spTopStats] 1
-EXEC [spTopStats] 2
-EXEC [spTopStats] 3
+EXEC [spTopPlayerStats] '1'
+EXEC [spTopPlayerStats] '009'
+
+EXEC [dbo].[spTopTeamStats] 1
+EXEC [dbo].[spTopTeamStats] 2
+EXEC [dbo].[spTopTeamStats] 3
+EXEC [dbo].[spTripleDoubleClub]
 
 EXEC [spPlayerTeamView] 1
 EXEC [spPlayerTeamView] 2
