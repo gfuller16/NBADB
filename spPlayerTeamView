@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/24/2017 1:16:44 PM ******/
+/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/26/2017 9:06:15 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -20,7 +20,6 @@ BEGIN
 		,[plTeam]
 		,[plInsideShot]
 		,[plOutsideShot]
-		,[plInsideShot] + ([plOutsideShot] * 1.5) AS ShotOverall
 		,[plPass]
 		,[plRebound]
 		,[plDefense]
@@ -38,13 +37,13 @@ END
 ELSE IF (@ID = 2)
 BEGIN
 	SELECT t.tmLocation + ' ' + t.tmName AS TeamName
-		  ,SUM(([plInsideShot] * 1.15)
-		  + ([plOutsideShot] * 1.75)
-		  + ([plPass] * 1.5)
-		  + ([plRebound] * 1.5)
-		  + ([plDefense] * 1.25)
-		  + ([plIQ] * 2)
-		  + ([plDetermination] * 1.5)) AS Total
+		  ,SUM(([plInsideShot] * 1.3)
+		  + ([plOutsideShot] * 1.4)
+		  + ([plPass] * 1.2)
+		  + ([plRebound] * 1.1)
+		  + ([plDefense] * 1)
+		  + ([plIQ] * 1.5)
+		  + ([plDetermination] * .75)) AS Total
 	FROM [NBADB].[dbo].[tblPlayer] p
 	JOIN tblTeam t
 		ON t.tmID = p.plTeam
@@ -58,13 +57,13 @@ ELSE IF (@ID = 3)
 BEGIN
 	  SELECT p.plID,
 		  p.plFirstName + ' ' + p.plLastName as Name
-		  ,SUM(([plInsideShot] * 1.15)
-		  + ([plOutsideShot] * 1.75)
-		  + ([plPass] * 1.5)
-		  + ([plRebound] * 1.5)
-		  + ([plDefense] * 1.25)
-		  + ([plIQ] * 2)
-		  + ([plDetermination] * 1.5)) AS Total
+		  ,SUM(([plInsideShot] * 1.3)
+		  + ([plOutsideShot] * 1.4)
+		  + ([plPass] * 1.2)
+		  + ([plRebound] * 1.1)
+		  + ([plDefense] * 1)
+		  + ([plIQ] * 1.5)
+		  + ([plDetermination] * .75)) AS Total
 	  FROM [NBADB].[dbo].[tblPlayer] p
 	  JOIN tblTeam t
 		ON t.tmID = p.plTeam
