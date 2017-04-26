@@ -1,7 +1,7 @@
 USE [NBADB]
 GO
 
-/****** Object:  Table [dbo].[tblGames]    Script Date: 4/19/2017 12:55:01 PM ******/
+/****** Object:  Table [dbo].[tblGames]    Script Date: 4/26/2017 9:03:33 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -15,6 +15,10 @@ CREATE TABLE [dbo].[tblGames](
 	[gmPoints1] [int] NULL,
 	[gmPoints2] [int] NULL,
 	[gmContest] [int] NULL,
+	[gmAssists1] [int] NULL,
+	[gmAssists2] [int] NULL,
+	[gmRebounds1] [int] NULL,
+	[gmRebounds2] [int] NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[gmID] ASC
