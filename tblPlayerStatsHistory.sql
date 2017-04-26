@@ -15,6 +15,7 @@ CREATE TABLE [dbo].[tblPlayerStatsHistory](
 	[pshPoints] [int] NOT NULL,
 	[pshAssists] [int] NOT NULL,
 	[pshRebounds] [int] NOT NULL,
+	[pshYear] [int] NOT NULL
 PRIMARY KEY CLUSTERED 
 (
 	[pshID] ASC
