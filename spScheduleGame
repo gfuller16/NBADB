@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spScheduleGame]    Script Date: 4/24/2017 3:07:03 PM ******/
+/****** Object:  StoredProcedure [dbo].[spScheduleGame]    Script Date: 4/26/2017 9:08:56 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -21,7 +21,11 @@ BEGIN
 	@Div2 INT,
 	@Conf2 INT,
 	@Team1Points INT,
-	@Team2Points INT
+	@Team2Points INT,
+	@Team1Assists INT,
+	@Team2Assists INT,
+	@Team1Rebounds INT,
+	@Team2Rebounds INT
 
 	IF(SELECT MIN([tmDivWins] + [tmDivLosses]) FROM [dbo].[tblTeam]) < 12
 	BEGIN
@@ -86,7 +90,7 @@ BEGIN
 					  FROM [dbo].[tblTeam]
 					  WHERE tmID = @Team2)
 
-		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+		EXEC [dbo].[spPlayRSGame] @Team1, @Team2, @gmID
 
 		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
@@ -98,6 +102,42 @@ BEGIN
 								GROUP BY t.tmID)
 
 		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID)
+
+		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team1
+								GROUP BY t.tmID)
+
+		SET @Team2Assists = (SELECT SUM(CONVERT(INT,gsAssists))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID)
+
+		SET @Team1Rebounds = (SELECT SUM(CONVERT(INT,gsRebounds))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team1
+								GROUP BY t.tmID)
+
+		SET @Team2Rebounds = (SELECT SUM(CONVERT(INT,gsRebounds))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -118,7 +158,12 @@ BEGIN
 			WHERE tmID = @Team2
 
 			UPDATE dbo.tblGames 
-			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
 			WHERE gmID = @gmID
 
 		END
@@ -135,7 +180,12 @@ BEGIN
 			WHERE tmID = @Team1
 
 			UPDATE dbo.tblGames 
-			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
 			WHERE gmID = @gmID
 
 		END
@@ -154,9 +204,14 @@ BEGIN
 				SET tmDivLosses = tmDivLosses + 1, tmConfLosses = tmConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team2
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -171,9 +226,14 @@ BEGIN
 				SET tmDivLosses = tmDivLosses + 1, tmConfLosses = tmConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team1
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points + 1
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points + 1,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -188,9 +248,14 @@ BEGIN
 				SET tmDivLosses = tmDivLosses + 1, tmConfLosses = tmConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team2
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -268,7 +333,7 @@ BEGIN
 					  WHERE tmID = @Team2)
 
 
-		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+		EXEC [dbo].[spPlayRSGame] @Team1, @Team2, @gmID
 
 		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
@@ -280,6 +345,42 @@ BEGIN
 								GROUP BY t.tmID)
 
 		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID)
+
+		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team1
+								GROUP BY t.tmID)
+
+		SET @Team2Assists = (SELECT SUM(CONVERT(INT,gsAssists))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID)
+
+		SET @Team1Rebounds = (SELECT SUM(CONVERT(INT,gsRebounds))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team1
+								GROUP BY t.tmID)
+
+		SET @Team2Rebounds = (SELECT SUM(CONVERT(INT,gsRebounds))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -300,7 +401,12 @@ BEGIN
 			WHERE tmID = @Team2
 
 			UPDATE dbo.tblGames 
-			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
 			WHERE gmID = @gmID
 
 		END
@@ -317,7 +423,12 @@ BEGIN
 			WHERE tmID = @Team1
 
 			UPDATE dbo.tblGames 
-			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
 			WHERE gmID = @gmID
 
 		END
@@ -336,9 +447,14 @@ BEGIN
 				SET tmConfLosses = tmConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team2
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -353,9 +469,14 @@ BEGIN
 				SET tmConfLosses = tmConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team1
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points + 1
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points + 1,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -370,9 +491,14 @@ BEGIN
 				SET tmConfLosses = tmConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team2
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -446,7 +572,7 @@ BEGIN
 					  WHERE tmID = @Team2)
 
 
-		EXEC [dbo].[spPlayGame] @Team1, @Team2, @gmID
+		EXEC [dbo].[spPlayRSGame] @Team1, @Team2, @gmID
 
 		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
 								FROM dbo.tblGameStats gs
@@ -458,6 +584,42 @@ BEGIN
 								GROUP BY t.tmID)
 
 		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID)
+
+		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team1
+								GROUP BY t.tmID)
+
+		SET @Team2Assists = (SELECT SUM(CONVERT(INT,gsAssists))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team2
+								GROUP BY t.tmID)
+
+		SET @Team1Rebounds = (SELECT SUM(CONVERT(INT,gsRebounds))
+								FROM dbo.tblGameStats gs
+								JOIN dbo.tblPlayer p
+									ON p.plID = gs.gs_plID
+								JOIN dbo.tblTeam t
+									ON t.tmID = p.plTeam
+								WHERE gs_gmID = @gmID AND t.tmID = @Team1
+								GROUP BY t.tmID)
+
+		SET @Team2Rebounds = (SELECT SUM(CONVERT(INT,gsRebounds))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -478,7 +640,12 @@ BEGIN
 			WHERE tmID = @Team2
 
 			UPDATE dbo.tblGames 
-			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
 			WHERE gmID = @gmID
 
 		END
@@ -495,7 +662,12 @@ BEGIN
 			WHERE tmID = @Team1
 
 			UPDATE dbo.tblGames 
-			SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
 			WHERE gmID = @gmID
 
 		END
@@ -514,9 +686,14 @@ BEGIN
 				SET tmNonConfLosses = tmNonConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team2
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -531,9 +708,14 @@ BEGIN
 				SET tmNonConfLosses = tmNonConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team1
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points, gmPoints2 = @Team2Points + 1
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points,
+				gmPoints2 = @Team2Points + 1,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
@@ -548,9 +730,14 @@ BEGIN
 				SET tmNonConfLosses = tmNonConfLosses + 1, tmTotalLosses = tmTotalLosses + 1
 				WHERE tmID = @Team2
 
-				UPDATE dbo.tblGames 
-				SET gmPoints1 = @Team1Points + 1, gmPoints2 = @Team2Points
-				WHERE gmID = @gmID
+			UPDATE dbo.tblGames 
+			SET gmPoints1 = @Team1Points + 1,
+				gmPoints2 = @Team2Points,
+				gmAssists1 = @Team1Assists,
+				gmAssists2 = @Team2Assists,
+				gmRebounds1 = @Team1Rebounds,
+				gmRebounds2 = @Team2Rebounds
+			WHERE gmID = @gmID
 
 			END
 
