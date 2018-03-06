@@ -1,10 +1,13 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 4/26/2017 9:06:15 AM ******/
+
+/****** Object:  StoredProcedure [dbo].[spPlayerTeamView]    Script Date: 3/6/2018 8:24:05 AM ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[spPlayerTeamView]
 @ID INT
 AS
@@ -12,6 +15,7 @@ BEGIN
 
 IF (@ID = 1)
 BEGIN
+
 	SELECT [plID]
 		,[plFirstName]
 		,[plLastName]
@@ -26,51 +30,112 @@ BEGIN
 		,[plIQ]
 		,[plDetermination]
 		,[plExperience]
+		,[plFantasyScore]
+		,[plRookieYear]
+		,[plRetired]
 	FROM [NBADB].[dbo].[tblPlayer] pl
 	JOIN tblTeam
 		ON tblTeam.tmID = pl.plTeam
 	JOIN tblPosition po
 		ON po.poID = pl.plPosition
+	WHERE [plRetired] = 0
+	ORDER BY [plTeam]
 
 END
 
 ELSE IF (@ID = 2)
 BEGIN
-	SELECT t.tmLocation + ' ' + t.tmName AS TeamName
-		  ,SUM(([plInsideShot] * 1.3)
-		  + ([plOutsideShot] * 1.4)
-		  + ([plPass] * 1.2)
-		  + ([plRebound] * 1.1)
-		  + ([plDefense] * 1)
-		  + ([plIQ] * 1.5)
-		  + ([plDetermination] * .75)) AS Total
-	FROM [NBADB].[dbo].[tblPlayer] p
-	JOIN tblTeam t
-		ON t.tmID = p.plTeam
-	JOIN tblDivision d
-		ON d.dvID = t.tmDivision
-	GROUP BY t.tmLocation, t.tmName
-	ORDER BY Total DESC
+
+    DECLARE @TopTeamScore DECIMAL(6,2) = (
+    SELECT TOP 1 SUM((([plInsideShot]) + ([plOutsideShot] * 1.33) + ([plIQ]))
+	   + (([plPass]    * 0.75) + ([plIQ] * 0.45))
+	   + (([plRebound] * 0.45) + ([plIQ] * 0.05))
+	   + (([plDefense] * 0.70) + ([plIQ] * 0.30))) AS Total
+    FROM [NBADB].[dbo].[tblPlayer] p
+    JOIN tblTeam t
+	   ON t.tmID = p.plTeam
+    JOIN tblDivision d
+	   ON d.dvID = t.tmDivision
+    WHERE [plRetired] = 0
+    GROUP BY t.tmLocation, t.tmName
+    ORDER BY [Total] DESC)
+
+    SELECT t.tmID,t.tmLocation + ' ' + t.tmName AS TeamName
+	   ,CONVERT(DECIMAL(6,2),SUM((([plInsideShot]) + ([plOutsideShot] * 1.33) + ([plIQ]))
+	   + (([plPass]    * 0.75) + ([plIQ] * 0.45))
+	   + (([plRebound] * 0.45) + ([plIQ] * 0.05))
+	   + (([plDefense] * 0.70) + ([plIQ] * 0.30)))) AS Total
+	   ,CONVERT(DECIMAL(6,2),@TopTeamScore - (SUM((([plInsideShot]) + ([plOutsideShot] * 1.33) + ([plIQ]))
+	   + (([plPass]    * 0.75) + ([plIQ] * 0.45))
+	   + (([plRebound] * 0.45) + ([plIQ] * 0.05))
+	   + (([plDefense] * 0.70) + ([plIQ] * 0.30))))) AS [PointsBehind]
+    FROM [NBADB].[dbo].[tblPlayer] p
+    JOIN tblTeam t
+	   ON t.tmID = p.plTeam
+    JOIN tblDivision d
+	   ON d.dvID = t.tmDivision
+    WHERE [plRetired] = 0
+    GROUP BY t.tmID, t.tmLocation, t.tmName
+    ORDER BY [Total] DESC
+
 END
 
 ELSE IF (@ID = 3)
 BEGIN
-	  SELECT p.plID,
-		  p.plFirstName + ' ' + p.plLastName as Name
-		  ,SUM(([plInsideShot] * 1.3)
-		  + ([plOutsideShot] * 1.4)
-		  + ([plPass] * 1.2)
-		  + ([plRebound] * 1.1)
-		  + ([plDefense] * 1)
-		  + ([plIQ] * 1.5)
-		  + ([plDetermination] * .75)) AS Total
-	  FROM [NBADB].[dbo].[tblPlayer] p
-	  JOIN tblTeam t
-		ON t.tmID = p.plTeam
-	JOIN tblDivision d
-		ON d.dvID = t.tmDivision
-	  GROUP BY p.plID, p.plFirstName,p.plLastName
-	  ORDER BY Total DESC
+	
+    DECLARE @TopPlayerScore DECIMAL(6,2) = (   
+    SELECT TOP 1 SUM((([plInsideShot]) + ([plOutsideShot] * 1.33) + ([plIQ]))
+	   + (([plPass]    * 0.75) + ([plIQ] * 0.45))
+	   + (([plRebound] * 0.45) + ([plIQ] * 0.05))
+	   + (([plDefense] * 0.70) + ([plIQ] * 0.30))) AS Total
+    FROM [NBADB].[dbo].[tblPlayer] p
+    JOIN tblTeam t
+	   ON t.tmID = p.plTeam
+    JOIN tblDivision d
+	   ON d.dvID = t.tmDivision
+    WHERE [plRetired] = 0
+    GROUP BY p.plID, p.plFirstName,p.plLastName
+    ORDER BY Total DESC)
+
+    SELECT p.plID,
+	   p.plFirstName + ' ' + p.plLastName as Name
+	   ,CONVERT(DECIMAL(6,2),SUM((([plInsideShot]) + ([plOutsideShot] * 1.33) + ([plIQ]))
+	   + (([plPass]    * 0.75) + ([plIQ] * 0.45))
+	   + (([plRebound] * 0.45) + ([plIQ] * 0.05))
+	   + (([plDefense] * 0.70) + ([plIQ] * 0.30)))) AS Total
+	   ,CONVERT(DECIMAL(6,2),@TopPlayerScore - (SUM((([plInsideShot]) + ([plOutsideShot] * 1.33) + ([plIQ]))
+	   + (([plPass]    * 0.75) + ([plIQ] * 0.45))
+	   + (([plRebound] * 0.45) + ([plIQ] * 0.05))
+	   + (([plDefense] * 0.70) + ([plIQ] * 0.30))))) AS [PointsBehind]
+    FROM [NBADB].[dbo].[tblPlayer] p
+    JOIN tblTeam t
+	   ON t.tmID = p.plTeam
+    JOIN tblDivision d
+	   ON d.dvID = t.tmDivision
+    WHERE [plRetired] = 0
+    GROUP BY p.plID, p.plFirstName,p.plLastName
+    ORDER BY Total DESC
+
+END
+
+ELSE IF (@ID = 4)
+BEGIN
+
+    SELECT
+    (SELECT CONVERT(DECIMAL(6,2),SUM((([plInsideShot]) + ([plOutsideShot] * 1.33) + ([plIQ]))
+	   + (([plPass]    * 0.75) + ([plIQ] * 0.45))
+	   + (([plRebound] * 0.45) + ([plIQ] * 0.05))
+	   + (([plDefense] * 0.70) + ([plIQ] * 0.30))))
+    FROM [NBADB].[dbo].[tblPlayer] p2
+    JOIN tblTeam t2
+	   ON t2.tmID = p2.plTeam
+    WHERE p2.plID = p1.plID AND [plRetired] = 0 
+    GROUP BY p2.plID, p2.plFirstName, p2.plLastName) as [Score]
+    ,p1.*
+    FROM tblPlayer p1
+    WHERE [plRetired] = 0
+    ORDER BY [Score] DESC
+
 END
 
 ELSE IF (@ID = 5)
@@ -82,7 +147,8 @@ BEGIN
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
 	plIQ,plDetermination,plExperience,
-	plPosition
+	plPosition,plFantasyScore,plRookieYear,
+	plRetired
 	FROM tblPlayerBackup
 END
 
@@ -95,32 +161,25 @@ BEGIN
 	plID,plFirstName,plLastName,
 	plTeam,plInsideShot,plOutsideShot,
 	plPass,plRebound,plDefense,
-	plIQ,getdate(),plDetermination,plExperience
-	,plPosition
+	plIQ,getdate(),plDetermination,plExperience,
+	plPosition,plFantasyScore,plRookieYear,
+	plRetired
 	FROM tblPlayer
 END
 
-ELSE IF (@ID = 666)
+ELSE IF (@ID = 7)
 BEGIN
-	UPDATE [NBADB].[dbo].[tblTeam]
-	SET tmDivLosses = 0, tmDivWins = 0, tmConfLosses = 0, tmConfWins = 0, tmTotalWins = 0, tmTotalLosses = 0, tmNonConfLosses = 0, tmNonConfWins = 0
-	DELETE FROM tblGameStats
-	DELETE FROM tblGames
-	DELETE FROM tblMVP
-	DELETE FROM tblNBAChampion
-	DELETE FROM tblNBAStandings
-	DELETE FROM tblPlayoffSeeding
-
-	DELETE FROM tblPlayer
-	INSERT INTO tblPlayer
-	SELECT
-	plID,plFirstName,plLastName,
-	plTeam,plInsideShot,plOutsideShot,
-	plPass,plRebound,plDefense,
-	plIQ,plDetermination,plExperience,
-	plPosition
-	FROM tblPlayerBackup
-
+SELECT
+t.tmLocation,t.tmName,
+CONVERT(DECIMAL(3,1),AVG(CONVERT(DECIMAL(3,1),p.plExperience))) as AvgExp
+FROM tblPlayer p
+JOIN tblTeam t
+    ON t.tmID = p.plTeam
+WHERE plRetired = 0
+GROUP BY
+t.tmLocation,t.tmName
+ORDER BY AvgExp DESC
 END
 
 END
+GO
