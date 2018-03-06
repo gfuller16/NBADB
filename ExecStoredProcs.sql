@@ -1,6 +1,13 @@
 USE NBADB
 GO
 
+/*
+EXEC [dbo].[spRegularSeason]
+EXEC [dbo].[spScheduleGame]
+
+EXEC [dbo].[spStandings]
+*/
+
 EXEC [spWinners]
 EXEC [spSeeAwards] 1 --mvp
 EXEC [spSeeAwards] 2 --roy
