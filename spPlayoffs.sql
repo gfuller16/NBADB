@@ -1,11 +1,11 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spPlayoffs]    Script Date: 4/26/2017 9:07:25 AM ******/
+/****** Object:  StoredProcedure [dbo].[spPlayoffs]    Script Date: 3/6/2018 8:24:42 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[spPlayoffs]
+ALTER PROCEDURE [dbo].[spPlayoffs]
 AS
 BEGIN
 
@@ -18,9 +18,10 @@ BEGIN
 	@Team1Assists INT,
 	@Team2Assists INT,
 	@Team1Rebounds INT,
-	@Team2Rebounds INT
+	@Team2Rebounds INT,
+	@PointDiff INT
 
-	EXEC [dbo].[spAwardMVPs]
+	EXEC [dbo].[spAwards] 0 -- Regular Season MVP
 
 	/****************************EC SEMIS, 1 V. 4 **************************
 	******************************************************************************/
@@ -43,29 +44,31 @@ BEGIN
 		  AND ps_cfID = 0
 		  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
 		)
+	
+	SET @PointDiff = (SELECT (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team1) - (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team2))
 
 	IF(SELECT MAX(psFRWins) FROM tblPlayoffSeeding WHERE (psSeed = 1 OR psSeed = 4) AND (ps_cfID = 0) AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)) < 4
 	BEGIN
 
 		EXEC [dbo].[spPlayPSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 							FROM dbo.tblGameStats gs
 							JOIN dbo.tblPlayer p
 								ON p.plID = gs.gs_plID
 							JOIN dbo.tblTeam t
 								ON t.tmID = p.plTeam
 							WHERE gs_gmID = @gmID AND t.tmID = @Team1
-							GROUP BY t.tmID)
+							GROUP BY t.tmID) + (@PointDiff * 3)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
 								JOIN dbo.tblTeam t
 									ON t.tmID = p.plTeam
 								WHERE gs_gmID = @gmID AND t.tmID = @Team2
-								GROUP BY t.tmID) - 10
+								GROUP BY t.tmID)
 
 		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
 								FROM dbo.tblGameStats gs
@@ -193,25 +196,27 @@ BEGIN
 			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
 			)
 
+		SET @PointDiff = (SELECT (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team1) - (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team2))
+
 		EXEC [dbo].[spPlayPSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 							FROM dbo.tblGameStats gs
 							JOIN dbo.tblPlayer p
 								ON p.plID = gs.gs_plID
 							JOIN dbo.tblTeam t
 								ON t.tmID = p.plTeam
 							WHERE gs_gmID = @gmID AND t.tmID = @Team1
-							GROUP BY t.tmID)
+							GROUP BY t.tmID) + (@PointDiff * 3)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
 								JOIN dbo.tblTeam t
 									ON t.tmID = p.plTeam
 								WHERE gs_gmID = @gmID AND t.tmID = @Team2
-								GROUP BY t.tmID) - 5
+								GROUP BY t.tmID)
 
 		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
 								FROM dbo.tblGameStats gs
@@ -339,25 +344,27 @@ BEGIN
 			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
 			)
 
+		SET @PointDiff = (SELECT (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team1) - (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team2))
+
 		EXEC [dbo].[spPlayPSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 							FROM dbo.tblGameStats gs
 							JOIN dbo.tblPlayer p
 								ON p.plID = gs.gs_plID
 							JOIN dbo.tblTeam t
 								ON t.tmID = p.plTeam
 							WHERE gs_gmID = @gmID AND t.tmID = @Team1
-							GROUP BY t.tmID)
+							GROUP BY t.tmID) + (@PointDiff * 3)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
 								JOIN dbo.tblTeam t
 									ON t.tmID = p.plTeam
 								WHERE gs_gmID = @gmID AND t.tmID = @Team2
-								GROUP BY t.tmID) - 10
+								GROUP BY t.tmID)
 
 		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
 								FROM dbo.tblGameStats gs
@@ -485,25 +492,27 @@ BEGIN
 			  AND psYear = (SELECT MAX(psYear) FROM tblPlayoffSeeding)
 			)
 
+		SET @PointDiff = (SELECT (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team1) - (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team2))
+		
 		EXEC [dbo].[spPlayPSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 							FROM dbo.tblGameStats gs
 							JOIN dbo.tblPlayer p
 								ON p.plID = gs.gs_plID
 							JOIN dbo.tblTeam t
 								ON t.tmID = p.plTeam
 							WHERE gs_gmID = @gmID AND t.tmID = @Team1
-							GROUP BY t.tmID)
+							GROUP BY t.tmID) + (@PointDiff * 3)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
 								JOIN dbo.tblTeam t
 									ON t.tmID = p.plTeam
 								WHERE gs_gmID = @gmID AND t.tmID = @Team2
-								GROUP BY t.tmID) - 5
+								GROUP BY t.tmID)
 
 		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
 								FROM dbo.tblGameStats gs
@@ -634,25 +643,27 @@ BEGIN
 		ORDER BY psSeed
 			)
 
+		SET @PointDiff = (SELECT (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team1) - (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team2))
+		
 		EXEC [dbo].[spPlayPSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 							FROM dbo.tblGameStats gs
 							JOIN dbo.tblPlayer p
 								ON p.plID = gs.gs_plID
 							JOIN dbo.tblTeam t
 								ON t.tmID = p.plTeam
 							WHERE gs_gmID = @gmID AND t.tmID = @Team1
-							GROUP BY t.tmID)
+							GROUP BY t.tmID) + (@PointDiff * 3)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
 								JOIN dbo.tblTeam t
 									ON t.tmID = p.plTeam
 								WHERE gs_gmID = @gmID AND t.tmID = @Team2
-								GROUP BY t.tmID) - 5
+								GROUP BY t.tmID)
 
 		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
 								FROM dbo.tblGameStats gs
@@ -783,25 +794,27 @@ BEGIN
 		ORDER BY psSeed
 			)
 
+		SET @PointDiff = (SELECT (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team1) - (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team2))
+		
 		EXEC [dbo].[spPlayPSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 							FROM dbo.tblGameStats gs
 							JOIN dbo.tblPlayer p
 								ON p.plID = gs.gs_plID
 							JOIN dbo.tblTeam t
 								ON t.tmID = p.plTeam
 							WHERE gs_gmID = @gmID AND t.tmID = @Team1
-							GROUP BY t.tmID)
+							GROUP BY t.tmID) + (@PointDiff * 3)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
 								JOIN dbo.tblTeam t
 									ON t.tmID = p.plTeam
 								WHERE gs_gmID = @gmID AND t.tmID = @Team2
-								GROUP BY t.tmID) - 5
+								GROUP BY t.tmID)
 
 		SET @Team1Assists = (SELECT SUM(CONVERT(INT,gsAssists))
 								FROM dbo.tblGameStats gs
@@ -929,18 +942,20 @@ BEGIN
 			  AND t.tmID <> @Team1
 			)
 
+		SET @PointDiff = (SELECT (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team1) - (SELECT tmTotalWins FROM tblTeam WHERE tmID = @Team2))
+		
 		EXEC [dbo].[spPlayPSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 							FROM dbo.tblGameStats gs
 							JOIN dbo.tblPlayer p
 								ON p.plID = gs.gs_plID
 							JOIN dbo.tblTeam t
 								ON t.tmID = p.plTeam
 							WHERE gs_gmID = @gmID AND t.tmID = @Team1
-							GROUP BY t.tmID)
+							GROUP BY t.tmID) + (@PointDiff * 3)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
