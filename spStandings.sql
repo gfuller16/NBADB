@@ -1,12 +1,12 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spStandings]    Script Date: 4/24/2017 3:41:01 PM ******/
+/****** Object:  StoredProcedure [dbo].[spStandings]    Script Date: 3/6/2018 8:28:00 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[spStandings]
+ALTER PROCEDURE [dbo].[spStandings]
 AS
 
 SET NOCOUNT ON
