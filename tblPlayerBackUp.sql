@@ -1,14 +1,11 @@
 USE [NBADB]
 GO
 
-/****** Object:  Table [dbo].[tblPlayerBackUp]    Script Date: 4/24/2017 1:18:13 PM ******/
+/****** Object:  Table [dbo].[tblPlayerBackUp]    Script Date: 3/6/2018 8:15:52 AM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
-GO
-
-SET ANSI_PADDING ON
 GO
 
 CREATE TABLE [dbo].[tblPlayerBackUp](
@@ -25,12 +22,15 @@ CREATE TABLE [dbo].[tblPlayerBackUp](
 	[plDate] [datetime] NOT NULL,
 	[plDetermination] [decimal](5, 2) NULL,
 	[plExperience] [int] NULL,
-	[plPosition] [int] NULL
+	[plPosition] [int] NULL,
+	[plFantasyScore] [int] NULL,
+	[plRookieYear] [int] NULL,
+	[plRetired] [bit] NULL,
+ CONSTRAINT [PK_tblPlayerBackUp] PRIMARY KEY CLUSTERED 
+(
+	[plID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
-
-GO
-
-SET ANSI_PADDING OFF
 GO
 
 ALTER TABLE [dbo].[tblPlayerBackUp] ADD  DEFAULT (getdate()) FOR [plDate]

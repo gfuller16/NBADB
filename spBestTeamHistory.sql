@@ -1,10 +1,13 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spBestTeamHistory]    Script Date: 4/21/2017 2:29:55 PM ******/
+
+/****** Object:  StoredProcedure [dbo].[spBestTeamHistory]    Script Date: 3/6/2018 8:21:48 AM ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[spBestTeamHistory]
 @ID INT
 AS
@@ -43,3 +46,4 @@ BEGIN
 END
 
 END
+GO

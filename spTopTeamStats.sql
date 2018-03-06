@@ -1,6 +1,6 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spTopTeamStats]    Script Date: 4/26/2017 9:09:47 AM ******/
+/****** Object:  StoredProcedure [dbo].[spTopTeamStats]    Script Date: 3/6/2018 8:28:53 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

@@ -1,11 +1,11 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spScheduleGame]    Script Date: 4/26/2017 9:08:56 AM ******/
+/****** Object:  StoredProcedure [dbo].[spScheduleGame]    Script Date: 3/6/2018 8:26:22 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[spScheduleGame]
+ALTER PROCEDURE [dbo].[spScheduleGame]
 AS
 
 BEGIN
@@ -26,6 +26,13 @@ BEGIN
 	@Team2Assists INT,
 	@Team1Rebounds INT,
 	@Team2Rebounds INT
+
+	IF(SELECT MAX([tmDivWins] + [tmDivLosses]) FROM [dbo].[tblTeam]) = 0
+	BEGIN
+		
+		EXEC [dbo].[spSetFantasySquads]
+
+	END
 
 	IF(SELECT MIN([tmDivWins] + [tmDivLosses]) FROM [dbo].[tblTeam]) < 12
 	BEGIN
@@ -92,7 +99,7 @@ BEGIN
 
 		EXEC [dbo].[spPlayRSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -101,7 +108,7 @@ BEGIN
 								WHERE gs_gmID = @gmID AND t.tmID = @Team1
 								GROUP BY t.tmID)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -335,7 +342,7 @@ BEGIN
 
 		EXEC [dbo].[spPlayRSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -344,7 +351,7 @@ BEGIN
 								WHERE gs_gmID = @gmID AND t.tmID = @Team1
 								GROUP BY t.tmID)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -574,7 +581,7 @@ BEGIN
 
 		EXEC [dbo].[spPlayRSGame] @Team1, @Team2, @gmID
 
-		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team1Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -583,7 +590,7 @@ BEGIN
 								WHERE gs_gmID = @gmID AND t.tmID = @Team1
 								GROUP BY t.tmID)
 
-		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.50)) + SUM(CONVERT(INT,gsRebounds * 0.30))
+		SET @Team2Points = (SELECT SUM(CONVERT(INT,gsPoints * 0.70)) + SUM(CONVERT(INT,gsAssists * 0.25)) + SUM(CONVERT(INT,gsRebounds * 0.70))
 								FROM dbo.tblGameStats gs
 								JOIN dbo.tblPlayer p
 									ON p.plID = gs.gs_plID
@@ -767,7 +774,7 @@ BEGIN
 					   (SELECT ISNULL(MAX(psSeed),0) FROM tblPlayoffSeeding) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 				FROM tblTeam
 				WHERE tmConference = 0
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC
@@ -777,7 +784,7 @@ BEGIN
 					   (SELECT ISNULL(MAX(pSeed),0) FROM #Playoffs) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 				FROM tblTeam
 				WHERE tmConference = 0 AND (tmID NOT IN(SELECT p_tmID FROM #Playoffs))
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC
@@ -787,7 +794,7 @@ BEGIN
 					   (SELECT ISNULL(MAX(pSeed),0) FROM #Playoffs) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 				FROM tblTeam
 				WHERE tmConference = 0 AND (tmID NOT IN(SELECT p_tmID FROM #Playoffs))
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC
@@ -797,7 +804,7 @@ BEGIN
 					   (SELECT ISNULL(MAX(pSeed),0) FROM #Playoffs) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 				FROM tblTeam
 				WHERE tmConference = 0 AND (tmID NOT IN(SELECT p_tmID FROM #Playoffs))
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC
@@ -819,7 +826,7 @@ BEGIN
 					  (SELECT ISNULL(MAX(pSeed),0) FROM #Playoffs WHERE p_cfID = 1) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 				FROM tblTeam
 				WHERE tmConference = 1 AND (tmID NOT IN(SELECT p_tmID FROM #Playoffs))
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC
@@ -829,7 +836,7 @@ BEGIN
 					  (SELECT ISNULL(MAX(pSeed),0) FROM #Playoffs WHERE p_cfID = 1) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 						FROM tblTeam
 				WHERE tmConference = 1 AND (tmID NOT IN(SELECT p_tmID FROM #Playoffs))
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC
@@ -839,7 +846,7 @@ BEGIN
 					  (SELECT ISNULL(MAX(pSeed),0) FROM #Playoffs WHERE p_cfID = 1) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 				FROM tblTeam
 				WHERE tmConference = 1 AND (tmID NOT IN(SELECT p_tmID FROM #Playoffs))
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC
@@ -849,7 +856,7 @@ BEGIN
 					  (SELECT ISNULL(MAX(pSeed),0) FROM #Playoffs WHERE p_cfID = 1) + 1,
 					   tmID,
 					   tmConference,
-					   (SELECT ISNULL(MAX(psYear),1999) FROM tblPlayoffSeeding) + 1
+					   (SELECT ISNULL(MAX(psYear),2016) FROM tblPlayoffSeeding) + 1
 				FROM tblTeam
 				WHERE tmConference = 1 AND (tmID NOT IN(SELECT p_tmID FROM #Playoffs))
 				ORDER BY tmConference, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmTotalWins]))/(CONVERT(DECIMAL,[tmTotalWins])+CONVERT(DECIMAL,[tmTotalLosses]))) DESC, CONVERT(DECIMAL(6,3),(CONVERT(DECIMAL,[tmConfWins]))/(CONVERT(DECIMAL,[tmConfWins])+CONVERT(DECIMAL,[tmConfLosses]))) DESC

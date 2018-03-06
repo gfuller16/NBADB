@@ -1,11 +1,11 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spRegularSeason]    Script Date: 4/19/2017 12:51:18 PM ******/
+/****** Object:  StoredProcedure [dbo].[spRegularSeason]    Script Date: 3/6/2018 8:25:48 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[spRegularSeason]
+ALTER PROCEDURE [dbo].[spRegularSeason]
 AS
 BEGIN
 

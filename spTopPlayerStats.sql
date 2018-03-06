@@ -1,12 +1,12 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spTopPlayerStats]    Script Date: 4/24/2017 3:08:29 PM ******/
+/****** Object:  StoredProcedure [dbo].[spTopPlayerStats]    Script Date: 3/6/2018 8:28:37 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[spTopPlayerStats]
+ALTER PROCEDURE [dbo].[spTopPlayerStats]
 @ORDER VARCHAR(3)
 AS
 BEGIN
