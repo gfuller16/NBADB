@@ -1,12 +1,12 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spSeeMVPRace]    Script Date: 4/21/2017 2:42:21 PM ******/
+/****** Object:  StoredProcedure [dbo].[spSeeMVPRace]    Script Date: 3/6/2018 8:27:15 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[spSeeMVPRace]
+ALTER PROCEDURE [dbo].[spSeeMVPRace]
 @ID INT
 AS
 BEGIN
