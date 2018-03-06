@@ -1,10 +1,13 @@
 USE [NBADB]
 GO
-/****** Object:  StoredProcedure [dbo].[spEndOfSeason]    Script Date: 4/21/2017 2:29:49 PM ******/
+
+/****** Object:  StoredProcedure [dbo].[spEndOfSeason]    Script Date: 3/6/2018 8:22:51 AM ******/
 SET ANSI_NULLS ON
 GO
+
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[spEndOfSeason]
 AS
 BEGIN
@@ -13,114 +16,131 @@ BEGIN
 			BEGIN
 
 				INSERT INTO [dbo].[tblNBAChampion](chID,ch_tmID,chYear)
-				VALUES((SELECT ISNULL(MAX(chID),0) FROM tblNBAChampion) + 1,(SELECT ps_tmID FROM tblPlayoffSeeding WHERE psFinalsWins = 4),(SELECT ISNULL(MAX(chYear),1999) + 1 FROM tblNBAChampion))
+				VALUES((SELECT ISNULL(MAX(chID),0) FROM tblNBAChampion) + 1,(SELECT ps_tmID FROM tblPlayoffSeeding WHERE psFinalsWins = 4),(SELECT ISNULL(MAX(chYear),2016) + 1 FROM tblNBAChampion))
 
-				EXEC [dbo].[spAwardMVPs]
-
+				EXEC [dbo].[spAwards] 1 --Finals MVP
+				EXEC [dbo].[spAwards] 2 --ROY	
+							
 				DECLARE @ChampName VARCHAR(50) = (SELECT tmLocation + ' ' + tmName 	FROM tblPlayoffSeeding ps JOIN tblTeam t ON t.tmID = ps.ps_tmID WHERE psFinalsWins = 4)
 				DECLARE @ChampYear VARCHAR(4) = CAST((SELECT MAX(chYear) FROM tblNBAChampion) AS VARCHAR(4))
-				DECLARE @RegMVP VARCHAR(30) = (SELECT plFirstName + ' ' + plLastName FROM tblPlayer p JOIN tblMVP m ON m.m_plID = p.plID WHERE mYear = (SELECT MAX(chYear) FROM tblNBAChampion) AND m.mRS_Finals = 0)
-				DECLARE @FinalsMVP VARCHAR(30) = (SELECT plFirstName + ' ' + plLastName FROM tblPlayer p JOIN tblMVP m ON m.m_plID = p.plID WHERE mYear = (SELECT MAX(chYear) FROM tblNBAChampion) AND m.mRS_Finals = 1)
+				DECLARE @RegMVP VARCHAR(30) = (SELECT ISNULL(plFirstName + ' ' + plLastName,'NOT FOUND') FROM tblPlayer p JOIN tblMVP m ON m.m_plID = p.plID WHERE mYear = @ChampYear AND m.mRS_Finals = 0)
+				DECLARE @FinalsMVP VARCHAR(30) = (SELECT ISNULL(plFirstName + ' ' + plLastName,'NOT FOUND') FROM tblPlayer p JOIN tblMVP m ON m.m_plID = p.plID WHERE mYear = @ChampYear AND m.mRS_Finals = 1)
+				DECLARE @ScoringChamp VARCHAR(30) = (SELECT p.plFirstName + ' ' + p.plLastName FROM tblScoringTitle s JOIN tblPlayer p ON p.plID = s.sc_plID WHERE scYear = @ChampYear)
 
 				UPDATE [NBADB].[dbo].[tblTeam]
 				SET tmDivLosses = 0, tmDivWins = 0, tmConfLosses = 0, tmConfWins = 0, tmTotalWins = 0, tmTotalLosses = 0, tmNonConfLosses = 0, tmNonConfWins = 0
+
+				IF(SELECT MAX(pshID) FROM tblPlayerStatsHistory) IS NULL				
+					DBCC CHECKIDENT ('[tblPlayerStatsHistory]',RESEED,0);
+
+				INSERT INTO tblPlayerStatsHistory(psh_gmID,psh_plID,pshPoints,pshAssists,pshRebounds,pshYear)
+				SELECT
+				gs_gmID,
+				gs_plID,
+				gsPoints,
+				gsAssists,
+				gsRebounds,
+				@ChampYear
+				FROM tblGameStats
+
+				EXEC [dbo].[spAwards] 3 --MIP
+
+				EXEC [dbo].[spSetFantasyChamp] @ChampYear
+
 				DELETE FROM tblGameStats
 				DELETE FROM tblGames
 				DELETE FROM tblPlayoffSeeding
 
+				DECLARE @FantasyChamp VARCHAR(30) = (SELECT TOP 1 u.fuFirstName + ' ' + u.fuLastName FROM tblFantasyChampion f JOIN tblFantasyUser u ON u.fuID = f.fcOwner WHERE fcYear = @ChampYear)
+				DECLARE @ROY VARCHAR(30) = (SELECT ISNULL(p.plFirstName + ' ' + p.plLastName,'NOT FOUND') FROM tblROY r JOIN tblPlayer p ON p.plID = r.r_plID WHERE r.rYear = @ChampYear)
+				DECLARE @MIP VARCHAR(30) = (SELECT ISNULL(p.plFirstName + ' ' + p.plLastName,'NOT FOUND') FROM tblMIP m JOIN tblPlayer p ON p.plID = m.mip_plID WHERE m.mipYear = @ChampYear)
+
 				PRINT ''
 				PRINT 'THE ' + @ChampName + ' ARE YOUR ' + @ChampYear + ' NBA CHAMPIONS!!!
 				'
-
+				PRINT 'NBA FINALS MVP: ' + @FinalsMVP
+				PRINT ''
 				PRINT 'REGULAR SEASON MVP: ' + @RegMVP
 				PRINT ''
-				PRINT 'NBA FINALS MVP: ' + @FinalsMVP
+				PRINT 'SCORING TITLE CHAMP: ' + @ScoringChamp
+				PRINT ''
+				PRINT 'ROOKIE OF THE YEAR: ' + @ROY
+				PRINT ''
+				PRINT 'MOST IMPROVED PLAYER: ' + @MIP
+				PRINT ''
+				PRINT 'FANTASY LEAGUE CHAMPION: ' + @FantasyChamp
+				PRINT ''
 
-				UPDATE NBADB.dbo.tblPlayer
-				SET 
-				plIQ =		   CASE WHEN (plExperience < 15) THEN
-									CASE WHEN (plDetermination - plExperience > 97)				 AND (plIQ < 99) THEN plIQ + .90
-										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plIQ < 99) THEN plIQ + .75
-										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plIQ < 99) THEN plIQ + .60
-										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plIQ < 99) THEN plIQ + .45
-										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plIQ < 99) THEN plIQ + .30
-										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plIQ < 99) THEN plIQ + .20
-										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plIQ < 99) THEN plIQ + .15
-										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plIQ < 99) THEN plIQ + .10
-										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plIQ < 99) THEN plIQ + .09
-										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plIQ < 99) THEN plIQ + .08
-										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plIQ < 99) THEN plIQ + .07
-										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plIQ < 99) THEN plIQ + .06
-										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plIQ < 99) THEN plIQ + .05
-										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plIQ < 99) THEN plIQ + .04
-										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plIQ < 99) THEN plIQ + .03
-										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plIQ < 99) THEN plIQ + .02
-										 ELSE plIQ END
-									WHEN (plExperience >= 15) THEN plIQ - .50 END,
-										
-				plDefense =	   CASE WHEN (plExperience < 15) THEN
-									CASE WHEN (plDetermination - plExperience > 97)				 AND (plDefense < 99) THEN plDefense + .90
-										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plDefense < 99) THEN plDefense + .75
-										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plDefense < 99) THEN plDefense + .60
-										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plDefense < 99) THEN plDefense + .45
-										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plDefense < 99) THEN plDefense + .30
-										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plDefense < 99) THEN plDefense + .20
-										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plDefense < 99) THEN plDefense + .15
-										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plDefense < 99) THEN plDefense + .10
-										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plDefense < 99) THEN plDefense + .09
-										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plDefense < 99) THEN plDefense + .08
-										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plDefense < 99) THEN plDefense + .07
-										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plDefense < 99) THEN plDefense + .06
-										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plDefense < 99) THEN plDefense + .05
-										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plDefense < 99) THEN plDefense + .04
-										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plDefense < 99) THEN plDefense + .03
-										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plDefense < 99) THEN plDefense + .02
-										 ELSE plDefense END
-									WHEN (plExperience >= 15) THEN plDefense - .50 END,
+				IF EXISTS(SELECT TOP 1 tdPlayerID_plID FROM tblTripleDoubleClub WHERE tdYear = @ChampYear)
+				BEGIN
+					
+					DECLARE @TDPlayerID INT, @TDPlayerName VARCHAR(30)
 
-				plOutsideShot = CASE WHEN (plExperience < 15) THEN
-									CASE WHEN (plDetermination - plExperience > 97)				 AND (plOutsideShot < 99) THEN plOutsideShot + .90
-										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plOutsideShot < 99) THEN plOutsideShot + .75
-										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plOutsideShot < 99) THEN plOutsideShot + .60
-										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plOutsideShot < 99) THEN plOutsideShot + .45
-										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plOutsideShot < 99) THEN plOutsideShot + .30
-										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plOutsideShot < 99) THEN plOutsideShot + .20
-										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plOutsideShot < 99) THEN plOutsideShot + .15
-										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plOutsideShot < 99) THEN plOutsideShot + .10
-										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plOutsideShot < 99) THEN plOutsideShot + .09
-										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plOutsideShot < 99) THEN plOutsideShot + .08
-										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plOutsideShot < 99) THEN plOutsideShot + .07
-										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plOutsideShot < 99) THEN plOutsideShot + .06
-										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plOutsideShot < 99) THEN plOutsideShot + .05
-										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plOutsideShot < 99) THEN plOutsideShot + .04
-										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plOutsideShot < 99) THEN plOutsideShot + .03
-										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plOutsideShot < 99) THEN plOutsideShot + .02
-										 ELSE plOutsideShot END
-									WHEN (plExperience >= 15) THEN plOutsideShot - .50 END,
+					DECLARE #PlayerCursor CURSOR
+					FOR
 
-				plInsideShot =  CASE WHEN (plExperience < 15) THEN
-									CASE WHEN (plDetermination - plExperience > 97)				 AND (plInsideShot < 99) THEN plInsideShot + .90
-										 WHEN (plDetermination - plExperience BETWEEN 95 AND 97) AND (plInsideShot < 99) THEN plInsideShot + .75
-										 WHEN (plDetermination - plExperience BETWEEN 92 AND 94) AND (plInsideShot < 99) THEN plInsideShot + .60
-										 WHEN (plDetermination - plExperience BETWEEN 89 AND 91) AND (plInsideShot < 99) THEN plInsideShot + .45
-										 WHEN (plDetermination - plExperience BETWEEN 86 AND 88) AND (plInsideShot < 99) THEN plInsideShot + .30
-										 WHEN (plDetermination - plExperience BETWEEN 83 AND 85) AND (plInsideShot < 99) THEN plInsideShot + .20
-										 WHEN (plDetermination - plExperience BETWEEN 80 AND 82) AND (plInsideShot < 99) THEN plInsideShot + .15
-										 WHEN (plDetermination - plExperience BETWEEN 77 AND 79) AND (plInsideShot < 99) THEN plInsideShot + .10
-										 WHEN (plDetermination - plExperience BETWEEN 74 AND 76) AND (plInsideShot < 99) THEN plInsideShot + .09
-										 WHEN (plDetermination - plExperience BETWEEN 71 AND 73) AND (plInsideShot < 99) THEN plInsideShot + .08
-										 WHEN (plDetermination - plExperience BETWEEN 68 AND 70) AND (plInsideShot < 99) THEN plInsideShot + .07
-										 WHEN (plDetermination - plExperience BETWEEN 65 AND 67) AND (plInsideShot < 99) THEN plInsideShot + .06
-										 WHEN (plDetermination - plExperience BETWEEN 62 AND 64) AND (plInsideShot < 99) THEN plInsideShot + .05
-										 WHEN (plDetermination - plExperience BETWEEN 59 AND 61) AND (plInsideShot < 99) THEN plInsideShot + .04
-										 WHEN (plDetermination - plExperience BETWEEN 56 AND 58) AND (plInsideShot < 99) THEN plInsideShot + .03
-										 WHEN (plDetermination - plExperience BETWEEN 50 AND 55) AND (plInsideShot < 99) THEN plInsideShot + .02
-										 ELSE plInsideShot END
-									WHEN (plExperience >= 15) THEN plInsideShot - .50 END
+						SELECT tdPlayerID_plID 
+						FROM tblTripleDoubleClub 
+						WHERE tdYear = @ChampYear
 
-				UPDATE tblPlayer
-				SET plExperience = plExperience + 1
-				WHERE plExperience < 20
+					OPEN #PlayerCursor
+					FETCH NEXT FROM #PlayerCursor INTO @TDPlayerID
+
+					WHILE (@@FETCH_STATUS = 0)
+					BEGIN
+						
+						SET @TDPlayerName = (SELECT plFirstName + ' ' + plLastName FROM tblPlayer WHERE plID = @TDPlayerID)
+
+						PRINT '***TRIPLE DOUBLE CLUB INDUCTEE: ' + @TDPlayerName
+						PRINT ''
+
+						FETCH NEXT FROM #PlayerCursor INTO @TDPlayerID
+					END
+
+					CLOSE #PlayerCursor
+					DEALLOCATE #PlayerCursor
+
+				END
+
+				EXEC [spUpdatePlayers]
+
+				--EXEC [spDraftRookies] @ChampYear
+
+				IF EXISTS(SELECT rkID FROM tblRookies WHERE rkYear = (@ChampYear + 1))
+				BEGIN
+				    
+				    DECLARE @RookieFN VARCHAR(20), @RookieLN VARCHAR(30),@TeamName VARCHAR(30)
+
+				    PRINT ''
+				    PRINT 'PLEASE WELCOME THE ' + CONVERT(VARCHAR(4),(@ChampYear + 1)) + ' ROOKIE CLASS!'
+				    PRINT '------------------------------------------'
+
+				    DECLARE Rookie CURSOR FOR
+					   
+					   SELECT 
+					   p.plFirstName, p.plLastName,(t.tmLocation + ' ' + t.tmName)
+					   FROM tblPlayer p
+					   JOIN tblTeam t
+						  ON t.tmID = p.plTeam
+					   WHERE p.plRookieYear = (@ChampYear + 1)
+
+				    OPEN Rookie
+				    FETCH NEXT FROM Rookie INTO @RookieFN,@RookieLN,@TeamName
+
+				    WHILE(@@FETCH_STATUS = 0)
+				    BEGIN					  
+
+					   PRINT @RookieFN + ' ' + @RookieLN + ' of the ' + @TeamName
+					   PRINT ''
+
+					   FETCH NEXT FROM Rookie INTO @RookieFN,@RookieLN,@TeamName
+
+				    END
+
+				    CLOSE Rookie
+				    DEALLOCATE Rookie
+
+				END
 
 			END
 
@@ -128,7 +148,7 @@ BEGIN
 		BEGIN
 			
 			SELECT psSeed,
-			   CONVERT(VARCHAR(30),tmLocation + ' ' + tmName) AS Name,
+			   CONVERT(VARCHAR(40),CONVERT(VARCHAR(30),tmLocation + ' ' + tmName) + ' (' + CONVERT(VARCHAR(3),t.tmTotalWins) + '-' + CONVERT(VARCHAR(3),t.tmTotalLosses) + ') ') AS Name,
 			   c.cfName,
 			   d.dvName,
 			   ps.psFRWins,
@@ -144,3 +164,4 @@ BEGIN
 
 		END
 END
+GO
